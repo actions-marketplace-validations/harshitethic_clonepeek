@@ -8,7 +8,7 @@
 
 [Quick start](#quick-start) · [What it finds](#what-it-finds) · [CI and PR reviews](#ci-and-pr-reviews) · [Threat model](docs/THREAT_MODEL.md) · [Contribute](CONTRIBUTING.md)
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue) ![License MIT](https://img.shields.io/badge/license-MIT-green) ![Offline scans](https://img.shields.io/badge/scanning-offline-black)
+[![CI](https://github.com/harshitethic/clonepeek/actions/workflows/ci.yml/badge.svg)](https://github.com/harshitethic/clonepeek/actions/workflows/ci.yml) ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue) ![License MIT](https://img.shields.io/badge/license-MIT-green) ![Offline scans](https://img.shields.io/badge/scanning-offline-black)
 
 </div>
 
@@ -48,7 +48,7 @@ Requires Python **3.10+** and no runtime Python dependencies.
 
 ```bash
 # Run directly from GitHub via uv (uv downloads/installs the Python package)
-uvx --from git+https://github.com/harshitethic/clonepeek clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.1.0 clonepeek /path/to/repo
 ```
 
 Or install locally:
@@ -117,11 +117,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@0e41999e5615f0c6f1df5a60858b6057e1b2ba44'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.1.0'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example pins a verified ClonePeek commit, rather than depending on an unpublished release tag. For stricter supply-chain controls, also pin GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins the published `v0.1.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 
