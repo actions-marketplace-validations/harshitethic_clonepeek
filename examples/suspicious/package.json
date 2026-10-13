@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "echo this is a normal manually invoked command",
+    "postinstall": "echo review this lifecycle entry point"
+  }
+}
