@@ -117,11 +117,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.1.0'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@0e41999e5615f0c6f1df5a60858b6057e1b2ba44'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example tag is only usable once release `v0.1.0` is published. For stricter supply-chain controls, pin GitHub Actions and this package to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins a verified ClonePeek commit, rather than depending on an unpublished release tag. For stricter supply-chain controls, also pin GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 
