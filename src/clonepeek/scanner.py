@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from pathlib import Path, PurePosixPath
 import re
+import stat
 import subprocess
 from typing import Iterator
 
@@ -29,6 +30,7 @@ def recognized(relative: str) -> bool:
     return (basename == "package.json" or
             (basename == "tasks.json" and ".vscode" in parts[:-1]) or
             (basename == "devcontainer.json" and ".devcontainer" in parts[:-1]) or
+            (basename == "settings.json" and ".claude" in parts[:-1]) or
             (basename in ("mcp.json", ".mcp.json") or basename.endswith(".mcp.json")))
 
 
@@ -47,7 +49,10 @@ def changed_paths(root: Path, ref: str) -> set[str]:
 
 def walk(root: Path) -> Iterator[tuple[str, Path]]:
     seen = 0
-    for base, dirs, files in os.walk(root, followlinks=False):
+    def error_on_unreadable_directory(exc: OSError) -> None:
+        raise ScanError(f"Unable to traverse directory: {type(exc).__name__}: {exc.strerror}") from exc
+
+    for base, dirs, files in os.walk(root, followlinks=False, onerror=error_on_unreadable_directory):
         path = Path(base)
         try:
             depth = len(path.relative_to(root).parts)
@@ -66,6 +71,29 @@ def walk(root: Path) -> Iterator[tuple[str, Path]]:
                 yield relative, file_path
 
 
+def read_regular_config(path: Path) -> bytes | None:
+    """Read a bounded regular file without following symlinks where supported.
+
+    A FIFO/device must never block the scanner. Read limits are enforced on
+    actual bytes, not just an earlier potentially stale file size.
+    """
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags)
+    try:
+        metadata = os.fstat(fd)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise OSError("Not a regular file")
+        if metadata.st_size > MAX_BYTES:
+            return None
+        with os.fdopen(fd, "rb") as stream:
+            fd = -1
+            data = stream.read(MAX_BYTES + 1)
+        return data if len(data) <= MAX_BYTES else None
+    finally:
+        if fd >= 0:
+            os.close(fd)
+
+
 def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]:
     if not root.is_dir() or root.is_symlink():
         raise ScanError(f"Not a directory (or symlink root): {root}")
@@ -77,7 +105,8 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
         if changed is not None and relative not in changed:
             continue
         try:
-            if path.stat().st_size > MAX_BYTES:
+            data = read_regular_config(path)
+            if data is None:
                 skipped += 1
                 findings.append(Finding.make(rule="oversize-config", severity="medium", path=relative,
                                              line=1, trigger="Static analysis", title="Config too large to scan",
@@ -85,7 +114,7 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
                                              why="A possibly executable configuration was skipped.",
                                              advice="Review this file manually or reduce its size.", identity="oversize"))
                 continue
-            content = path.read_text(encoding="utf-8-sig")
+            content = data.decode("utf-8-sig")
             scanned += 1
             findings.extend(inspect(relative, content))
         except (OSError, UnicodeError) as exc:

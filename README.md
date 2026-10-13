@@ -16,7 +16,7 @@
 
 You clone a repo. You open it in an editor, install its dependencies, or attach an AI agent. **What code might run without you explicitly calling a project script?**
 
-ClonePeek maps *known first-run execution surfaces*: folder-open editor tasks, npm install hooks, devcontainer lifecycle commands, and local MCP server launch commands. Each result includes **the trigger, the source file, a severity heuristic, and a concrete review action**.
+ClonePeek maps *known first-run execution surfaces*: folder-open editor tasks, npm install hooks, devcontainer lifecycle commands, Claude Code command hooks, and local MCP server launch commands. Each result includes **the trigger, the source file, a severity heuristic, and a concrete review action**.
 
 It does **not** execute package scripts, build the project, launch MCP servers, follow symbolic links, upload source code, send telemetry, or require an API key. Scans do not access the network; installation from GitHub does.
 
@@ -42,13 +42,21 @@ ClonePeek · 2 inspected · 0 skipped · 2 execution surfaces
 
 The demonstration uses the reserved, non-resolving `.invalid` domain. **ClonePeek only reads the sample file; it never runs those commands.**
 
+Try the additional **Claude Code hooks** example:
+
+```bash
+clonepeek examples/claude-hooks
+```
+
+It reports one critical `SessionStart` fetch-and-execute hook and one medium `PostToolUse` command, including each command's actual file line. Neither hook is run.
+
 ## Quick start
 
 Requires Python **3.10+** and no runtime Python dependencies.
 
 ```bash
 # Run directly from GitHub via uv (uv downloads/installs the Python package)
-uvx --from git+https://github.com/harshitethic/clonepeek@v0.1.0 clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.2.0 clonepeek /path/to/repo
 ```
 
 Or install locally:
@@ -77,11 +85,12 @@ PYTHONPATH=src python -m clonepeek examples/suspicious
 | `.devcontainer/devcontainer.json` | `initializeCommand`, `postStartCommand` | Container setup/start/attach events | `devcontainer-lifecycle` |
 | Devcontainer features | `features` map | Devcontainer build | `devcontainer-feature` |
 | MCP configuration | `mcpServers.<name>.command` | Agent client starts/approves local MCP process | `mcp-server-process` |
+| Claude Code hooks | `.claude/settings.json` with `hooks.<event>.*.hooks[].type: command` | Configured Claude Code lifecycle event | `claude-hook-command` |
 | Unreadable/invalid config | Malformed JSONC, oversized file | Cannot determine execution behavior | `config-parse`, `oversize-config`, `unreadable-config` |
 
 Checks are **heuristics**, not malware verdicts. Any lifecycle hook can be legitimate. Severity increases for obvious fetch-and-execute, network-plus-credentials, destructive filesystem commands, or opaque code execution. Files are analyzed by bounded reads and JSON/JSONC parsing; the scanner does not follow shell-script references or calculate a complete transitive execution graph.
 
-See [rule details](docs/RULES.md) and [threat model](docs/THREAT_MODEL.md) for exact coverage and false negatives.
+See [rule details](docs/RULES.md), [threat model](docs/THREAT_MODEL.md), and the [labeled-fixture evaluation](docs/EVALUATION.md) for exact coverage, measured synthetic false positives, and false negatives.
 
 ## CI and PR reviews
 
@@ -117,11 +126,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.1.0'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.2.0'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example pins the published `v0.1.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins the published `v0.2.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 
@@ -149,7 +158,7 @@ Stable fingerprints ── optional baseline / diff filter
        └──▶ SARIF 2.1 for security pipelines
 ```
 
-Pure Python standard library at runtime, deterministic rule-based analysis, no dynamic imports from scanned repositories. No need for LLM access or model tokens.
+Pure Python standard library at runtime, deterministic rule-based analysis, no dynamic imports from scanned repositories. Version 0.2.0 also limits bytes read per file and refuses named pipes/devices (plus no-follow handling where supported). No need for LLM access or model tokens.
 
 ## Why this exists
 
