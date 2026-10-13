@@ -9,10 +9,10 @@ from typing import Any
 from .formats import line_for, load_json, redact
 from .models import Finding
 
-FETCH_EXEC = re.compile(r"(?is)(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?(?:ba?sh|zsh|sh|python\d?|node|pwsh|powershell|cmd)\b|\b(?:bash|sh|pwsh|powershell)\s+<(?:\(|\s)*\s*(?:curl|wget)\b")
+FETCH_EXEC = re.compile(r"(?is)(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?(?:ba?sh|zsh|sh|python\d?|node|pwsh|powershell|cmd|iex|invoke-expression)\b|\b(?:bash|sh|pwsh|powershell)\s+<(?:\(|\s)*\s*(?:curl|wget)\b")
 CREDENTIALS = re.compile(r"(?i)(?:\$\{?(?:[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY|PRIVATE_KEY|CREDENTIAL)[A-Z0-9_]*)\}?|process\.env|os\.environ|\.env\b|id_rsa\b|\.aws/credentials|\.ssh/)")
-DESTRUCTIVE = re.compile(r"(?i)(?:\brm\s+-[a-z]*r[a-z]*f\b|\brm\s+-[a-z]*f[a-z]*r\b|\bformat\s+[a-z]:|\bmkfs\.|\bdel\s+/[fsq])")
-ENCODED = re.compile(r"(?i)(?:base64\s+(?:-d|--decode)|\batob\s*\(|\bfrombase64string\s*\(|\beval\s*\(|\bexec\s*\()")
+DESTRUCTIVE = re.compile(r"(?i)(?:\brm\s+-[a-z]*r[a-z]*f\b|\brm\s+-[a-z]*f[a-z]*r\b|\bformat\s+[a-z]:|\bmkfs\.|\bdel\s+/[fsq]|\bremove-item\b[^\n]{0,120}-(?:recurse|r)\b)")
+ENCODED = re.compile(r"(?i)(?:base64\s+(?:-d|--decode)|\batob\s*\(|\bfrombase64string\s*\(|\beval\s*\(|\bexec\s*\(|\b(?:powershell|pwsh)(?:\.exe)?\b[^\n]{0,140}-(?:encodedcommand|enc)\b)")
 NETWORK = re.compile(r"(?i)\b(?:curl|wget|fetch|iwr|invoke-webrequest)\b|https?://")
 SHELL = re.compile(r"(?i)\b(?:bash|sh|zsh|pwsh|powershell|cmd(?:\.exe)?)\b")
 
@@ -67,13 +67,14 @@ def inspect(path: str, text: str) -> list[Finding]:
     is_devcontainer = p.name == "devcontainer.json" and ".devcontainer" in p.parts
     is_package = p.name == "package.json"
     is_mcp = p.name in ("mcp.json", ".mcp.json") or (p.name.endswith(".mcp.json"))
-    if not (is_vscode or is_devcontainer or is_package or is_mcp):
+    is_claude = p.name == "settings.json" and ".claude" in p.parts
+    if not (is_vscode or is_devcontainer or is_package or is_mcp or is_claude):
         return result
     try:
         obj = load_json(text, jsonc=is_vscode or is_devcontainer or is_mcp)
         if not isinstance(obj, dict):
             raise ValueError("Expected a JSON object")
-    except (json.JSONDecodeError, ValueError) as exc:
+    except (json.JSONDecodeError, ValueError, RecursionError) as exc:
         return [Finding.make(rule="config-parse", severity="medium", path=path, line=1,
                              trigger="Static analysis", title="Configuration could not be parsed",
                              evidence=f"{type(exc).__name__}: {redact(str(exc))}",
@@ -142,6 +143,34 @@ def inspect(path: str, text: str) -> list[Finding]:
                                            title="Devcontainer feature installs extra code",
                                            evidence=redact(str(name)), why="Features can run installation code during container setup.",
                                            advice="Review the feature source and pin its version.", identity=str(name)))
+    if is_claude:
+        hooks = obj.get("hooks", {})
+        if isinstance(hooks, dict):
+            cursor = 0
+            for event, groups in hooks.items():
+                if not isinstance(groups, list):
+                    continue
+                for group_index, group in enumerate(groups):
+                    if not isinstance(group, dict) or not isinstance(group.get("hooks"), list):
+                        continue
+                    matcher = group.get("matcher", "*")
+                    for hook_index, hook in enumerate(group["hooks"]):
+                        if not isinstance(hook, dict) or hook.get("type") != "command":
+                            continue
+                        if not isinstance(hook.get("command"), str):
+                            continue
+                        command = " ".join(filter(None, [hook["command"], flatten(hook.get("args", []))]))
+                        key = re.search(r'"command"\s*:', text[cursor:])
+                        start = cursor + key.start() if key else 0
+                        if key:
+                            cursor += key.end()
+                        result.append(emit(rule="claude-hook-command", path=path, text=text,
+                                           needle='"command"', start=max(0, start),
+                                           trigger=f"Claude Code {redact(str(event), 45)} event (matcher: {redact(str(matcher), 55)})",
+                                           title=f"Claude Code command hook: {redact(str(event), 60)}",
+                                           command=command,
+                                           base="high" if event in ("SessionStart", "Setup") else "medium",
+                                           identity=f"{event}:{group_index}:{hook_index}:{matcher}:{command}"))
     if is_mcp:
         servers = obj.get("mcpServers", obj.get("servers", {}))
         if isinstance(servers, dict):

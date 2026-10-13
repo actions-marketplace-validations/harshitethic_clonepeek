@@ -72,7 +72,27 @@ def jsonc_to_json(text: str) -> str:
 
 
 def load_json(text: str, jsonc: bool = False):
-    return json.loads(jsonc_to_json(text) if jsonc else text)
+    """Parse bounded-depth config even on Python versions with high JSON recursion limits."""
+    prepared = jsonc_to_json(text) if jsonc else text
+    depth = 0
+    in_string = escaped = False
+    for char in prepared:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char in "{[":
+            depth += 1
+            if depth > 128:
+                raise ValueError("Configuration nesting exceeds 128 levels")
+        elif char in "]}":
+            depth = max(0, depth - 1)
+    return json.loads(prepared)
 
 
 def redact(value: str, length: int = 240) -> str:
@@ -110,7 +130,7 @@ def sarif(findings: list[Finding]) -> dict:
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "runs": [{
-            "tool": {"driver": {"name": "ClonePeek", "version": "0.1.0", "informationUri": "https://github.com/harshitethic/clonepeek",
+            "tool": {"driver": {"name": "ClonePeek", "version": "0.2.0", "informationUri": "https://github.com/harshitethic/clonepeek",
                                 "rules": [{"id": r, "name": r} for r in rules]}},
             "results": [{
                 "ruleId": f.rule,
