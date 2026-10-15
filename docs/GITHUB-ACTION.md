@@ -1,0 +1,59 @@
+# ClonePeek composite GitHub Action (v0.5.0)
+
+The repository-root [action.yml](../action.yml) makes ClonePeek a reusable composite GitHub Action. It **reads configuration files and bounded local shell references, not executes any repository code**. The Python runtime is set up by GitHub's Python setup action, then ClonePeek runs directly from the trusted action checkout, with no pip installation or dependencies from the repository being audited.
+
+## Report-only PR integration
+
+Start with report-only mode, then enable a severity threshold once you have reviewed findings:
+
+```yaml
+name: ClonePeek review
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: harshitethic/clonepeek@v0.5.0
+        id: clonepeek
+        with:
+          path: .
+          changed-since: ${{ github.event.pull_request.base.sha }}
+          fail-on: none
+          format: text
+```
+
+After reviewing existing findings, choose `fail-on: high` to block on new high and critical items. For baseline support, generate a reviewed baseline using `clonepeek . --write-baseline .clonepeek-baseline.json` and set the action input `baseline: .clonepeek-baseline.json`.
+
+## Inputs
+
+| Input | Default | Meaning |
+| --- | --- | --- |
+| `path` | `.` | Local directory to inspect |
+| `fail-on` | `none` | `none`, `low`, `medium`, `high`, or `critical` |
+| `format` | `text` | `text`, `json`, or `sarif` |
+| `output` | empty | Optional path for the full report; stdout otherwise |
+| `changed-since` | empty | Git ref/SHA for a diff-only scan; history must be available |
+| `baseline` | empty | Reviewed baseline JSON for suppressing known findings from the threshold |
+
+## Outputs and logs
+
+The action exports `findings`, `new-findings`, `critical`, `high`, `scanned`, and `report-path` as string outputs. The GitHub job summary contains **counts only**, with a limitations notice. The complete report can expose source lines and secrets not covered by best-effort redaction; review it before uploading or sharing an artifact.
+
+Exit `0`: scan successful and no enabled threshold crossed.
+Exit `1`: a new heuristic finding met the specified severity threshold (not proof of malicious code).
+Exit `2`: invalid input or a scanner error, which also fails the step.
+
+The action's code resides in the versioned action checkout, **separate** from the repository being scanned. The wrapper imports its own `src` modules, never dynamically imports code from the target, and does not run its package scripts or agent hooks. The scan is offline; the outer GitHub workflow may use the network when setting up Python.
+
+The action does not check out the target repository; use a preceding `actions/checkout` step or supply a local path. In `changed-since` mode, Git is invoked with hardened flags to obtain tracked paths. Untracked or dynamically referenced files remain outside this mode's coverage. See the [threat model](THREAT_MODEL.md) and [Git isolation note](GIT-CONFIG-ISOLATION.md).
+
+## Validation and version pinning
+
+The [composite action CI workflow](../.github/workflows/composite-action.yml) invokes the actual action with `uses: ./` on Ubuntu, macOS and Windows, verifies reported outputs and SARIF content, and separately checks expected severity-threshold failure. [Adapter tests](../tests/test_action_runner.py) cover inert fixtures, formats, baseline behavior, invalid options and shell metacharacters.
+
+For stricter release immutability, replace the tag `@v0.5.0` in consumer workflows with the tag's immutable Git commit SHA after verifying it. Marketplace listing and independent external adoption are separate from having a valid `action.yml`.

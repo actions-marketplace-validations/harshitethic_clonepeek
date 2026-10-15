@@ -1,0 +1,55 @@
+name: Reusable GitHub Action
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    name: Composite (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan an inert example with the local composite action
+        uses: ./
+        id: scan
+        with:
+          path: examples/indirect-script
+          fail-on: none
+          format: sarif
+          output: ${{ runner.temp }}/clonepeek-action-example.sarif
+      - name: Verify report and declared outputs
+        shell: bash
+        env:
+          FINDINGS: ${{ steps.scan.outputs.findings }}
+          CRITICAL: ${{ steps.scan.outputs.critical }}
+          NEW_FINDINGS: ${{ steps.scan.outputs.new-findings }}
+          REPORT: ${{ steps.scan.outputs.report-path }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads(Path(os.environ['REPORT']).read_text())
+          assert report['runs'][0]['tool']['driver']['version'] == '0.5.0'
+          assert len(report['runs'][0]['results']) == 2
+          assert (os.environ['FINDINGS'], os.environ['CRITICAL'], os.environ['NEW_FINDINGS']) == ('2', '1', '2')
+          print('Composite action, metadata outputs and SARIF report passed')
+          PY
+      - name: Verify threshold raises a failing step
+        id: gate
+        uses: ./
+        continue-on-error: true
+        with:
+          path: examples/indirect-script
+          fail-on: critical
+      - name: Confirm failing threshold was expected
+        if: always()
+        shell: bash
+        env:
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+        run: |
+          test "$GATE_OUTCOME" = "failure"

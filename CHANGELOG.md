@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-10-15
+
+- Ship an install-free composite GitHub Action that runs the Python scanner from the versioned action checkout against the user’s repository.
+- Add configurable report-only and severity-gated modes, JSON/SARIF/text output, changed-ref and baseline inputs.
+- Emit count-only GitHub Step Summary and declared machine-readable outputs without leaking source excerpts in the summary.
+- Validate Windows, Linux and macOS reusable action execution in a separate CI workflow, including expected failure thresholds.
+- Add action-runner security regression tests and documentation with a pinned example workflow.
+
 ## 0.4.1 — 2026-10-15
 
 - Fix `--changed-since` to inspect a tracked `.sh` script when its text changes but the configuration that references it does not.
