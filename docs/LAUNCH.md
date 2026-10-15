@@ -14,6 +14,18 @@
 
 
 
+
+## v0.5.0 action release — verified October 15, 2026
+
+- **Public release:** [ClonePeek v0.5.0](https://github.com/harshitethic/clonepeek/releases/tag/v0.5.0), source archive and wheel uploaded; release points to merge commit `65adee2`.
+- **New adoption path:** `uses: harshitethic/clonepeek@v0.5.0` within GitHub Actions. See [GitHub Action guide](GITHUB-ACTION.md) and the [live composite-action test workflow](../.github/workflows/composite-action.yml).
+- **Proven compatibility:** 3/3 actual composite-action matrix jobs passed on Ubuntu/macOS/Windows; 6/6 main-branch Python suite jobs passed on Python 3.10 and 3.13. 64 local tests passing.
+- **Safety position:** no scanned project code execution, report-only default, optional thresholds/baselines, action summary lists counts and not source excerpts. The complete report may still expose sensitive source.
+- **GitHub Marketplace status:** NOT published there. The owner must first review/accept GitHub's Marketplace Developer Agreement; no agent should accept contracts on the owner's behalf. This is separate from the public GitHub release and installable action.
+- **Organic traction:** Do not confuse tests, discussion announcements or version releases with external stars, forks, downloads, or reviews. Current adoption should be measured from subsequent GitHub analytics and genuine user feedback.
+
+Suggested one-sentence announcement: **"ClonePeek is a free GitHub Action and local CLI that shows npm, editor, and AI-agent hooks that might execute when you trust an unfamiliar repository—without running the repo's code."** Link the tiny non-executing demo and disclose first-hop limitations. Share once in each relevant community only when authenticated and within its guidelines; don't solicit fake stars.
+
 ## v0.4.1 current release and launch materials
 
 - **Published tag:** [ClonePeek v0.4.1](https://github.com/harshitethic/clonepeek/releases/tag/v0.4.1), with wheel and source archive.
