@@ -70,7 +70,7 @@ Requires Python **3.10+** and no runtime Python dependencies.
 
 ```bash
 # Run directly from GitHub via uv (uv downloads/installs the Python package)
-uvx --from git+https://github.com/harshitethic/clonepeek@v0.4.1 clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.5.0 clonepeek /path/to/repo
 ```
 
 Or install locally:
@@ -118,6 +118,36 @@ execution-surface counts and sample-size uncertainty. The remaining
 false negatives include references to scripts not included in a synthetic fixture and unsupported dynamic or nested script calls. A lower-severity finding
 is **not** proof that referenced code is safe.
 
+## GitHub Action — drop into your PR checks
+
+ClonePeek now has a [composite GitHub Action](action.yml). **No separate pip install is needed** in a workflow; the action uses its own pinned GitHub source checkout and Python 3.13. It scans a separate checkout of your project without invoking its package scripts or executing local hooks. Default `fail-on: none` reports findings without blocking PRs. You may opt into a severity threshold after reviewing the baseline.
+
+```yaml
+name: Passive repository audit
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  clonepeek:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed for --changed-since to reach the PR base
+      - name: Audit changed config and referenced scripts
+        id: audit
+        uses: harshitethic/clonepeek@v0.5.0
+        with:
+          path: .
+          changed-since: ${{ github.event.pull_request.base.sha }}
+          fail-on: high
+          format: sarif
+          output: clonepeek.sarif
+      # Optional: upload clonepeek.sarif with appropriate code-scanning permissions.
+```
+
+The action provides `findings`, `new-findings`, `critical`, `high`, `scanned`, and `report-path` outputs and a source-free count summary in the GitHub Actions job summary. Reports and full step logs **can contain sensitive source excerpts**: do not make artifacts public without reviewing them. Set `fail-on: none` for report-only use; valid thresholds are `low`, `medium`, `high`, or `critical`. `changed-since` requires reachable Git history and ignores untracked files. Explicit checkout permissions are `contents: read`, and normal scans make no network requests (the action may download a trusted Python runtime through `actions/setup-python`). See [integration guide](docs/GITHUB-ACTION.md) for inputs and constraints.
+
 ## CI and PR reviews
 
 ```bash
@@ -152,11 +182,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.4.1'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.5.0'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example pins the published `v0.4.1` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins the published `v0.5.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 

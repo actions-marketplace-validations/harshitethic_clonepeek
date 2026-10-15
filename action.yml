@@ -1,0 +1,68 @@
+name: ClonePeek — passive repository execution audit
+description: Inventory hidden install/editor/agent execution hooks without running repository code.
+author: Harshit Sharma
+branding:
+  icon: search
+  color: blue
+inputs:
+  path:
+    description: Local directory to scan (usually the checked-out repository).
+    required: false
+    default: '.'
+  fail-on:
+    description: Severity threshold for failing this action (none, low, medium, high, critical).
+    required: false
+    default: none
+  format:
+    description: Report format (text, json, sarif).
+    required: false
+    default: text
+  output:
+    description: Optional destination path for the full report; source excerpts may contain sensitive data.
+    required: false
+    default: ''
+  changed-since:
+    description: Optional Git ref/SHA to restrict findings to tracked changes; requires checkout history.
+    required: false
+    default: ''
+  baseline:
+    description: Optional baseline JSON path; suppresses previously accepted findings from fail-on.
+    required: false
+    default: ''
+outputs:
+  findings:
+    description: Total identified execution surfaces and related coverage warnings.
+    value: ${{ steps.scan.outputs.findings }}
+  new-findings:
+    description: Number of findings absent from the configured baseline.
+    value: ${{ steps.scan.outputs.new-findings }}
+  critical:
+    description: Number of critical findings.
+    value: ${{ steps.scan.outputs.critical }}
+  high:
+    description: Number of high findings.
+    value: ${{ steps.scan.outputs.high }}
+  scanned:
+    description: Number of recognized configuration files read.
+    value: ${{ steps.scan.outputs.scanned }}
+  report-path:
+    description: Report output path, when the output input was supplied.
+    value: ${{ steps.scan.outputs.report-path }}
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: Run passive ClonePeek audit
+      id: scan
+      shell: bash
+      env:
+        CLONEPEEK_INPUT_PATH: ${{ inputs.path }}
+        CLONEPEEK_INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        CLONEPEEK_INPUT_FORMAT: ${{ inputs.format }}
+        CLONEPEEK_INPUT_OUTPUT: ${{ inputs.output }}
+        CLONEPEEK_INPUT_CHANGED_SINCE: ${{ inputs.changed-since }}
+        CLONEPEEK_INPUT_BASELINE: ${{ inputs.baseline }}
+      run: python "$GITHUB_ACTION_PATH/action_runner.py"
