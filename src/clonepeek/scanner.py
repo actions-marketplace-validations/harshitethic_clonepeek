@@ -10,7 +10,7 @@ from typing import Iterator
 
 from .detectors import inspect
 from .models import Finding, SEVERITIES
-from .script_review import MAX_REFERENCES, literal_script_refs, review_script
+from .script_review import MAX_REFERENCES, literal_script_refs, review_script, safe_script_path
 
 IGNORED = frozenset({".git", "node_modules", ".venv", "venv", "__pycache__", ".next", ".nuxt",
                      "dist", "build", ".tox", ".mypy_cache", ".pytest_cache", "vendor", ".terraform"})
@@ -137,11 +137,13 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
         raise ScanError(f"Not a directory (or symlink root): {root}")
     root = root.resolve()
     changed = changed_paths(root, since) if since else None
+    changed_scripts = bool(changed and any(p.endswith(".sh") for p in changed))
     findings: list[Finding] = []
     scanned = skipped = 0
     references = 0
     for relative, path in walk(root):
-        if changed is not None and relative not in changed:
+        config_changed = changed is None or relative in changed
+        if not config_changed and not changed_scripts:
             continue
         try:
             data = read_regular_config(path)
@@ -156,13 +158,18 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
             content = data.decode("utf-8-sig")
             scanned += 1
             config_findings = inspect(relative, content)
-            findings.extend(config_findings)
+            if config_changed:
+                findings.extend(config_findings)
             for finding in config_findings:
                 if finding.rule not in {"npm-lifecycle", "vscode-folder-open",
                                         "devcontainer-lifecycle", "cursor-hook-command",
                                         "claude-hook-command", "mcp-server-process"}:
                     continue
                 for reference in literal_script_refs(finding.evidence):
+                    if not config_changed:
+                        target = safe_script_path(root, finding.path, reference)
+                        if target is None or target[0] not in changed:
+                            continue
                     if references >= MAX_REFERENCES:
                         findings.append(Finding.make(
                             rule="referenced-script-unreadable", severity="medium",

@@ -70,7 +70,7 @@ Requires Python **3.10+** and no runtime Python dependencies.
 
 ```bash
 # Run directly from GitHub via uv (uv downloads/installs the Python package)
-uvx --from git+https://github.com/harshitethic/clonepeek@v0.4.0 clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.4.1 clonepeek /path/to/repo
 ```
 
 Or install locally:
@@ -152,11 +152,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.4.0'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.4.1'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example pins the published `v0.4.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins the published `v0.4.1` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 
