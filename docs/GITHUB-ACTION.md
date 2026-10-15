@@ -52,6 +52,10 @@ The action's code resides in the versioned action checkout, **separate** from th
 
 The action does not check out the target repository; use a preceding `actions/checkout` step or supply a local path. In `changed-since` mode, Git is invoked with hardened flags to obtain tracked paths. Untracked or dynamically referenced files remain outside this mode's coverage. See the [threat model](THREAT_MODEL.md) and [Git isolation note](GIT-CONFIG-ISOLATION.md).
 
+### Verified separately from ClonePeek's own repository
+
+The public v0.5.0 composite action also ran successfully in a [separate RepoPilot CI workflow](https://github.com/harshitethic/RepoPilot/actions/runs/38728091966). It reviewed two **immutable, read-only snapshots from public third-party repositories**, confirmed their Git blob hashes, and validated seven medium Cursor hook findings and two high VS Code folder-open task findings. The [full reproducibility note](CROSS-REPO-SMOKE.md) records repository/commit identifiers, matching source paths, and important limitations. This is a maintainer-run integration smoke test, **not independent third-party adoption or a population-level security evaluation**.
+
 ## Validation and version pinning
 
 The [composite action CI workflow](../.github/workflows/composite-action.yml) invokes the actual action with `uses: ./` on Ubuntu, macOS and Windows, verifies reported outputs and SARIF content, and separately checks expected severity-threshold failure. [Adapter tests](../tests/test_action_runner.py) cover inert fixtures, formats, baseline behavior, invalid options and shell metacharacters.
