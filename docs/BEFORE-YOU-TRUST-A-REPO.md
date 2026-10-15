@@ -25,7 +25,7 @@ If you are reviewing truly suspicious material, use a disposable, appropriately 
 | `.claude/settings.json` hook commands | Configured Claude Code lifecycle events | Which tool/event triggers this command? |
 | MCP server process configuration | Starting an approved or configured local MCP server | What executable and arguments are launched? |
 
-VS Code's official [task documentation](https://code.visualstudio.com/docs/debugtest/tasks#_automatically-running-tasks) explains that `folderOpen` tasks are subject to workspace trust and automatic-task settings/approval. **A task's presence does not mean it definitely executed.** Distinguish the ability to run from actual execution.
+VS Code's official [task documentation](https://code.visualstudio.com/docs/debugtest/tasks#_control-automatic-task-execution) explains that `folderOpen` tasks are subject to workspace trust and automatic-task settings/approval. **A task's presence does not mean it definitely executed.** Distinguish the ability to run from actual execution.
 
 A mundane command can still be important. For example, a `postinstall` script that says `sh ./scripts/setup.sh` gives you another file to inspect. A command's severity is context-dependent, not a verdict about its author's intent.
 
