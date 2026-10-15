@@ -11,6 +11,8 @@ ClonePeek uses static rules. Severity reflects *review urgency*, not proof that 
 | `mcp-server-process` | Medium | client starts/approves configured local MCP process | Remote URL-only servers are currently out of scope. |
 | `claude-hook-command` | Medium; High for `SessionStart`/`Setup` | Claude Code lifecycle event triggers a `type: command` hook | Parses `.claude/settings.json`, reports event, matcher and command. Prompt, HTTP and MCP hooks are out of scope. |
 | `cursor-hook-command` | Medium; High for `workspaceOpen`/`sessionStart` | Cursor project hook commands in `.cursor/hooks.json` | Event and matcher are shown; prompt hooks are not shell execution. |
+| `referenced-shell-risk` | High/Critical | A recognized entry point explicitly launches a local `.sh` file whose text contains a heuristic match | First-hop only, no execution, no parsing of shell control flow. |
+| `referenced-script-unreadable` | Medium | Missing, excluded, or oversized referenced script; reference budget exhausted | This is incomplete coverage, not proof of danger. |
 | `config-parse`, `oversize-config`, `unreadable-config` | Medium | incomplete scan | Fail visibility: a skipped/invalid relevant config is never called clean. |
 
 ## Severity escalation
@@ -31,7 +33,7 @@ The redactor masks **some recognizable secrets** in CLI evidence. Because comman
 ## Labeled synthetic evaluation
 
 Run `python -m evaluation.evaluate` after installing this package. The
-51-case **hand-authored synthetic** corpus reports high-risk TP=15, FP=3,
+51-case **hand-authored synthetic** corpus reports high-risk TP=18, FP=4,
 FN=2 and TN=26 (precision 81.8%, recall 90.0%) at the `high`
 threshold. Separate per-rule surface-presence counts are available in the
 JSON output, including `null` when a metric is unidentifiable. These
@@ -45,3 +47,7 @@ See [EVALUATION.md](EVALUATION.md) for exact breakdown and limits.
 ## Public smoke test
 
 ClonePeek v0.3.0 was run against a public command-hook configuration from the official Cursor cookbook: 7 hook command findings, all medium. This validates that the basic format is recognized, **not** real-world security accuracy. See [REAL-WORLD-VALIDATION.md](REAL-WORLD-VALIDATION.md).
+
+## First-hop local script review
+
+In v0.4.0, explicit `sh scripts/setup.sh`, `bash ./scripts/setup.sh`, or `./scripts/setup.sh` references may be inspected when they appear in modeled execution configurations. The scanner analyzes at most **32** references, reads at most **128 KiB** and **2,000 lines** per referenced script, and never launches a script or follows symlinked references. It reports dangerous-looking text with its own source line and the originating configuration. These are plain-text heuristics; quoted examples and unreachable branches can generate false positives. Dynamic paths, nested scripts, PowerShell files, and interpreted code in other languages remain unsupported.

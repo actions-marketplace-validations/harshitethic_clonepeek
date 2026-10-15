@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-10-15
+
+- Add one-hop, read-only review of explicit local shell-script references from modeled editor/package/agent lifecycle configurations.
+- Report risky referenced script lines with original path, line, and entry-point trigger; warn for missing, symlinked, unreadable, or oversized scripts.
+- Bound inspection to 32 references per scan, 128 KiB and 2,000 lines per script; reject path escapes and avoid executing anything.
+- Add an illustrative `.invalid` example, integration/regression tests, and explicit threat-model caveats.
+- Keep the existing 51-case synthetic evaluation separate from multi-file integration tests; do not misrepresent toy scores as field accuracy.
+
 ## 0.3.0 — 2026-10-15
 
 - Add Cursor project command-hook scanning for `.cursor/hooks.json`, including trusted workspace open, session and tool events, trigger descriptions, and source-line evidence.

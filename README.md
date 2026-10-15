@@ -46,6 +46,14 @@ ClonePeek · 2 inspected · 0 skipped · 2 execution surfaces
 
 The demonstration uses the reserved, non-resolving `.invalid` domain. **ClonePeek only reads the sample file; it never runs those commands.**
 
+To examine the **one-hop local script review** (without running any code):
+
+```bash
+clonepeek examples/indirect-script
+```
+
+The `package.json` postinstall hook is medium severity, and a **critical** finding points to `scripts/setup.sh:4`, where a purely illustrative `.invalid` URL is piped to a shell. This is still a static, heuristic inventory, not proof that the command was ever executed.
+
 Try the additional **Claude Code hooks** example:
 
 ```bash
@@ -62,7 +70,7 @@ Requires Python **3.10+** and no runtime Python dependencies.
 
 ```bash
 # Run directly from GitHub via uv (uv downloads/installs the Python package)
-uvx --from git+https://github.com/harshitethic/clonepeek@v0.3.0 clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.4.0 clonepeek /path/to/repo
 ```
 
 Or install locally:
@@ -93,9 +101,10 @@ PYTHONPATH=src python -m clonepeek examples/suspicious
 | MCP configuration | `mcpServers.<name>.command` | Agent client starts/approves local MCP process | `mcp-server-process` |
 | Claude Code hooks | `.claude/settings.json` or `.claude/settings.local.json` with `hooks.<event>.*.hooks[].type: command` | Configured Claude Code lifecycle event | `claude-hook-command` |
 | Cursor project hooks | `.cursor/hooks.json` with `hooks.<event>[].command` | Cursor workspace/agent hooks, including trusted-workspace open | `cursor-hook-command` |
+| Explicit local `.sh` reference | `postinstall: sh ./scripts/setup.sh` | Referenced script may run when source entry point fires | `referenced-shell-risk`, `referenced-script-unreadable` |
 | Unreadable/invalid config | Malformed JSONC, oversized file | Cannot determine execution behavior | `config-parse`, `oversize-config`, `unreadable-config` |
 
-Checks are **heuristics**, not malware verdicts. Any lifecycle hook can be legitimate. Severity increases for obvious fetch-and-execute, network-plus-credentials, destructive filesystem commands, or opaque code execution. Files are analyzed by bounded reads and JSON/JSONC parsing; the scanner does not follow shell-script references or calculate a complete transitive execution graph.
+Checks are **heuristics**, not malware verdicts. Any lifecycle hook can be legitimate. Severity increases for obvious fetch-and-execute, network-plus-credentials, destructive filesystem commands, or opaque code execution. Files are analyzed by bounded reads and JSON/JSONC parsing. The scanner also reads **one hop of explicitly referenced local `.sh` scripts**, without executing them. It does not calculate a complete transitive execution graph.
 
 See [rule details](docs/RULES.md), [threat model](docs/THREAT_MODEL.md), and the [labeled-fixture evaluation](docs/EVALUATION.md) for exact coverage, measured synthetic false positives, and false negatives.
 
@@ -106,7 +115,7 @@ The [51-case labeled synthetic evaluation](docs/EVALUATION.md) reports
 negatives at the high-risk threshold (81.8% precision and 90.0% recall
 **on these hand-authored fixtures only**). It also reports per-rule
 execution-surface counts and sample-size uncertainty. The remaining
-false negatives include indirect local scripts; a lower-severity finding
+false negatives include references to scripts not included in a synthetic fixture and unsupported dynamic or nested script calls. A lower-severity finding
 is **not** proof that referenced code is safe.
 
 ## CI and PR reviews
@@ -143,11 +152,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.3.0'
+      - run: python -m pip install 'git+https://github.com/harshitethic/clonepeek.git@v0.4.0'
       - run: clonepeek . --fail-on high
 ```
 
-**Note:** the example pins the published `v0.3.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
+**Note:** the example pins the published `v0.4.0` release tag. For stricter supply-chain controls, pin both this package and GitHub Actions to immutable commit SHAs. SARIF upload requires separate Code Scanning permissions and may depend on GitHub repository settings.
 
 ### Exit codes
 
@@ -175,7 +184,7 @@ Stable fingerprints ── optional baseline / diff filter
        └──▶ SARIF 2.1 for security pipelines
 ```
 
-Pure Python standard library at runtime, deterministic rule-based analysis, no dynamic imports from scanned repositories. Version 0.2.1 also limits bytes read per file and refuses named pipes/devices (plus no-follow handling where supported). No need for LLM access or model tokens.
+Pure Python standard library at runtime, deterministic rule-based analysis, no dynamic imports from scanned repositories. Literal shell-script inspection is one hop only, limited to 32 references per scan, 128 KiB and 2,000 lines per script; skipped/unreadable matches are disclosed. Version 0.2.1 also limits bytes read per file and refuses named pipes/devices (plus no-follow handling where supported). No need for LLM access or model tokens.
 
 ## Why this exists
 

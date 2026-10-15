@@ -4,15 +4,15 @@ ClonePeek is an **inventory and review aid**, not a proof of safety or an execut
 
 ## Trust boundaries
 
-- Input: local directory you choose. Avoid scanning special device files or attacker-controlled live mounts. Reads are bounded to 512 KiB per recognized file and 100,000 visited files; traversal depth is at most 16 directories.
-- Execution: no intentional project-defined shell invocations. Changed-file mode invokes an installed Git executable with fixed argv, a filtered environment, disabled filesystem monitors, hooks, external diff and text conversion. This prevents the reproduced Git core.fsmonitor helper execution but is not a complete sandbox or full Git security audit. See [the reproduced defect and mitigation](GIT-CONFIG-ISOLATION.md). The tool does not run package managers or launch MCP servers.
+- Input: local directory you choose. Avoid scanning special device files or attacker-controlled live mounts. Reads are bounded to 512 KiB per recognized configuration file and 100,000 visited files; traversal depth is at most 16 directories. Explicit local `.sh` references are read with a separate limit of 128 KiB, 2,000 lines, and at most 32 references per scan.
+- Execution: no intentional project-defined shell invocations. Changed-file mode invokes an installed Git executable with fixed argv, a filtered environment, disabled filesystem monitors, hooks, external diff and text conversion. This prevents the reproduced Git core.fsmonitor helper execution but is not a complete sandbox or full Git security audit. See [the reproduced defect and mitigation](GIT-CONFIG-ISOLATION.md). The tool does not run package managers, launch MCP servers, or execute any referenced shell scripts. Script inspection reads text only and does not even shell-parse it.
 - Network: no network calls during scanning, no telemetry. Installing the tool via GitHub/pip/uv requires network access.
-- Filesystem: symlink roots and symlink files/directories are excluded, as are typical dependency and build directories. v0.2 rejects non-regular files (including named pipes/devices), uses nonblocking/no-follow flags where supported, and caps bytes actually read. An active attacker swapping files mid-scan and platforms without `O_NOFOLLOW` still present TOCTOU limitations.
+- Filesystem: symlink roots and symlink files/directories are excluded, as are typical dependency and build directories. v0.2 rejects non-regular files (including named pipes/devices), uses nonblocking/no-follow flags where supported, and caps bytes actually read. Referenced scripts cannot be read through symlinked ancestors where detectable. An active attacker swapping files mid-scan and platforms without `O_NOFOLLOW` still present TOCTOU limitations.
 - Output: source excerpts can themselves contain sensitive values. Redaction is best effort, **not a data loss prevention system**. Treat artifacts as potentially sensitive.
 
-## Non-goals for v0.2.1
+## Non-goals for v0.4.0
 
-- Detecting every way a repo can run code (e.g. scripts referenced by an entry point, editor extensions, Python build backends, Git hooks, arbitrary agent prompts, HTTP-only hooks, CI workflow execution, shell initialization, binary polyglots, injected package dependencies, code execution during language import).
+- Detecting every way a repo can run code (e.g. transitive script calls, dynamically constructed paths, `bash -c`, scripts without explicit `.sh` suffixes, editor extensions, Python build backends, Git hooks, arbitrary agent prompts, HTTP-only hooks, CI workflow execution, shell initialization, binary polyglots, injected package dependencies, code execution during language import).
 - Following runtime network calls or discovering all malicious URLs.
 - Running arbitrary downloaded repositories in a sandbox.
 - Malware detection verdicts, machine learning or semantic analysis.
@@ -24,3 +24,7 @@ If a config cannot be parsed (including nesting deeper than 128 levels) or excee
 ## Responsible vulnerability reporting
 
 Please follow [SECURITY.md](../SECURITY.md). Do not open a public issue with unreleased vulnerabilities or real private credentials.
+
+## First-hop script limitations
+
+Only explicit literal `.sh` references from recognized executable configuration entries are considered; plain `.sh` files are not broadly scanned. The scanner does not evaluate shell substitutions, expand variables, traverse additional `source` or `sh` calls, or assume command reachability. It treats every non-comment line as plain text and may flag quoted strings, dead code, or harmless examples. Only lines meeting an existing **high** or **critical** heuristic produce script risk findings; a script with no findings is never a safety verdict. Missing, disallowed, oversized, and unreadable references yield **medium** coverage notices. Generated reports can still leak unknown secret formats, so review them before publishing.

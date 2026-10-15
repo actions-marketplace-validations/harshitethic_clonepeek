@@ -47,8 +47,9 @@ Four **false positives** are harmless folder-open tasks (three VS Code,
 one Cursor), including the following VS Code examples: an `echo`, a hidden-terminal `echo`, and a syntax check. They are still
 real execution surfaces, which ClonePeek intentionally labels `high` by
 default. Two **false negatives** are dangerous behavior inside a
-referenced local script, which the scanner does not follow. Those still
-appear as `medium` npm lifecycle findings, not as a clean bill of health.
+referenced local script, which the **single-file synthetic fixtures do not provide**. In v0.4.0 the
+scanner can read some direct literal `.sh` references if they exist in the same repository, but these fixture references are absent and still
+appear as `medium` npm lifecycle findings plus a coverage warning, not as a clean bill of health.
 
 ## Per-rule surface-presence evaluation
 
@@ -106,3 +107,7 @@ Harmless PowerShell examples do not classify as critical.
 
 See [the heuristic rules](RULES.md), [threat model](THREAT_MODEL.md),
 and [the full evaluation source](../evaluation/evaluate.py).
+
+## v0.4.0 multi-file regression tests
+
+The 51-case synthetic confusion matrix above is unchanged, because each fixture contains just one configuration file. Separate **multi-file integration tests** in `tests/test_script_review.py` exercise local `.sh` references, missing files, symlink escape attempts, FIFOs, oversized scripts, redaction, line-number reporting, and the absence of script execution. These prove only the documented cases, not population-level real-world coverage.
