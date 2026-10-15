@@ -116,7 +116,7 @@ class CompositeActionTests(unittest.TestCase):
 
     def test_readme_contains_direct_action_usage(self):
         root = Path(__file__).resolve().parents[1]
-        readme = (root / "README.md").read_text()
+        readme = (root / "README.md").read_text(encoding="utf-8")
         self.assertIn("uses: harshitethic/clonepeek@v0.5.0", readme)
         self.assertTrue((root / "action.yml").is_file())
 
