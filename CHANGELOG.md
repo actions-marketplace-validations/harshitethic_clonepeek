@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-10-15
+
+- Fix `--changed-since` to inspect a tracked `.sh` script when its text changes but the configuration that references it does not.
+- Keep unchanged configuration findings out of diff-only results; emit script-specific findings with their correct origin.
+- Add a real temporary Git repository regression test and preserve passive, bounded script reading.
+
 ## 0.4.0 — 2026-10-15
 
 - Add one-hop, read-only review of explicit local shell-script references from modeled editor/package/agent lifecycle configurations.

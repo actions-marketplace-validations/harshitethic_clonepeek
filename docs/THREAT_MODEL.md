@@ -28,3 +28,7 @@ Please follow [SECURITY.md](../SECURITY.md). Do not open a public issue with unr
 ## First-hop script limitations
 
 Only explicit literal `.sh` references from recognized executable configuration entries are considered; plain `.sh` files are not broadly scanned. The scanner does not evaluate shell substitutions, expand variables, traverse additional `source` or `sh` calls, or assume command reachability. It treats every non-comment line as plain text and may flag quoted strings, dead code, or harmless examples. Only lines meeting an existing **high** or **critical** heuristic produce script risk findings; a script with no findings is never a safety verdict. Missing, disallowed, oversized, and unreadable references yield **medium** coverage notices. Generated reports can still leak unknown secret formats, so review them before publishing.
+
+### Changed-file inspection
+
+With `--changed-since REF`, ClonePeek checks changed recognized configurations and, when a tracked `.sh` script changes, also examines unchanged configurations for direct literal references to it. Only findings from the modified script are returned in that latter case. Untracked files are excluded by Git's diff behavior. Changes to scripts referenced only dynamically or through unsupported languages remain out of scope.
