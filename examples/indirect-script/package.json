@@ -1,0 +1,7 @@
+{
+  "name": "clonepeek-indirect-example",
+  "private": true,
+  "scripts": {
+    "postinstall": "sh ./scripts/setup.sh"
+  }
+}

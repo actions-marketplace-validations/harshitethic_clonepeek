@@ -10,6 +10,7 @@ from typing import Iterator
 
 from .detectors import inspect
 from .models import Finding, SEVERITIES
+from .script_review import MAX_REFERENCES, literal_script_refs, review_script
 
 IGNORED = frozenset({".git", "node_modules", ".venv", "venv", "__pycache__", ".next", ".nuxt",
                      "dist", "build", ".tox", ".mypy_cache", ".pytest_cache", "vendor", ".terraform"})
@@ -108,7 +109,7 @@ def walk(root: Path) -> Iterator[tuple[str, Path]]:
                 yield relative, file_path
 
 
-def read_regular_config(path: Path) -> bytes | None:
+def read_regular_config(path: Path, limit: int = MAX_BYTES) -> bytes | None:
     """Read a bounded regular file without following symlinks where supported.
 
     A FIFO/device must never block the scanner. Read limits are enforced on
@@ -120,12 +121,12 @@ def read_regular_config(path: Path) -> bytes | None:
         metadata = os.fstat(fd)
         if not stat.S_ISREG(metadata.st_mode):
             raise OSError("Not a regular file")
-        if metadata.st_size > MAX_BYTES:
+        if metadata.st_size > limit:
             return None
         with os.fdopen(fd, "rb") as stream:
             fd = -1
-            data = stream.read(MAX_BYTES + 1)
-        return data if len(data) <= MAX_BYTES else None
+            data = stream.read(limit + 1)
+        return data if len(data) <= limit else None
     finally:
         if fd >= 0:
             os.close(fd)
@@ -138,6 +139,7 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
     changed = changed_paths(root, since) if since else None
     findings: list[Finding] = []
     scanned = skipped = 0
+    references = 0
     for relative, path in walk(root):
         if changed is not None and relative not in changed:
             continue
@@ -153,7 +155,28 @@ def scan(root: Path, since: str | None = None) -> tuple[list[Finding], int, int]
                 continue
             content = data.decode("utf-8-sig")
             scanned += 1
-            findings.extend(inspect(relative, content))
+            config_findings = inspect(relative, content)
+            findings.extend(config_findings)
+            for finding in config_findings:
+                if finding.rule not in {"npm-lifecycle", "vscode-folder-open",
+                                        "devcontainer-lifecycle", "cursor-hook-command",
+                                        "claude-hook-command", "mcp-server-process"}:
+                    continue
+                for reference in literal_script_refs(finding.evidence):
+                    if references >= MAX_REFERENCES:
+                        findings.append(Finding.make(
+                            rule="referenced-script-unreadable", severity="medium",
+                            path=relative, line=finding.line, trigger="Static analysis",
+                            title="Reference budget exhausted",
+                            evidence=f"Maximum {MAX_REFERENCES} referenced scripts per scan",
+                            why="Additional explicit shell script references were not followed.",
+                            advice="Inspect remaining scripts manually.",
+                            identity="reference-budget",
+                        ))
+                        break
+                    references += 1
+                    findings.extend(review_script(root=root, source=finding,
+                                                  reference=reference, reader=read_regular_config))
         except (OSError, UnicodeError) as exc:
             skipped += 1
             findings.append(Finding.make(rule="unreadable-config", severity="medium", path=relative,
