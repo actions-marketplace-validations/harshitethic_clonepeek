@@ -12,14 +12,14 @@ from evaluation.evaluate import _evaluate_cases, _score, _wilson_interval, evalu
 class EvaluationTests(unittest.TestCase):
     def test_all_fixture_labels_are_measured_and_rule_counts_match(self):
         report = evaluate()
-        self.assertEqual(report["cases"], 46)
-        self.assertEqual((report["tp"], report["fp"], report["fn"], report["tn"]), (15, 3, 2, 26))
-        self.assertAlmostEqual(report["precision"], 15 / 18)
-        self.assertAlmostEqual(report["recall"], 15 / 17)
+        self.assertEqual(report["cases"], 51)
+        self.assertEqual((report["tp"], report["fp"], report["fn"], report["tn"]), (18, 4, 2, 27))
+        self.assertAlmostEqual(report["precision"], 18 / 22)
+        self.assertAlmostEqual(report["recall"], 18 / 20)
         self.assertEqual(len(report["outcomes"]), report["cases"])
         self.assertEqual(
             sum(entry["tp"] for entry in report["by_rule"].values()),
-            38,
+            43,
         )
         self.assertTrue(all(
             entry["fp"] == 0 and entry["fn"] == 0
@@ -62,7 +62,7 @@ class EvaluationTests(unittest.TestCase):
             capture_output=True, text=True, timeout=30, check=True,
         )
         report = json.loads(result.stdout)
-        self.assertEqual(report["cases"], 46)
+        self.assertEqual(report["cases"], 51)
         self.assertEqual(report["cases"], sum(report[key] for key in ("tp", "fp", "fn", "tn")))
         self.assertEqual(
             set(report["by_rule"]["mcp-server-process"]),

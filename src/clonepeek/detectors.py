@@ -73,11 +73,12 @@ def inspect(path: str, text: str) -> list[Finding]:
     is_devcontainer = p.name == "devcontainer.json" and ".devcontainer" in p.parts
     is_package = p.name == "package.json"
     is_mcp = p.name in ("mcp.json", ".mcp.json") or (p.name.endswith(".mcp.json"))
-    is_claude = p.name == "settings.json" and ".claude" in p.parts
-    if not (is_vscode or is_devcontainer or is_package or is_mcp or is_claude):
+    is_claude = p.name in ("settings.json", "settings.local.json") and ".claude" in p.parts
+    is_cursor = p.name == "hooks.json" and ".cursor" in p.parts
+    if not (is_vscode or is_devcontainer or is_package or is_mcp or is_claude or is_cursor):
         return result
     try:
-        obj = load_json(text, jsonc=is_vscode or is_devcontainer or is_mcp)
+        obj = load_json(text, jsonc=is_vscode or is_devcontainer or is_mcp or is_cursor)
         if not isinstance(obj, dict):
             raise ValueError("Expected a JSON object")
     except (json.JSONDecodeError, ValueError, RecursionError) as exc:
@@ -177,6 +178,39 @@ def inspect(path: str, text: str) -> list[Finding]:
                                            command=command,
                                            base="high" if event in ("SessionStart", "Setup") else "medium",
                                            identity=f"{event}:{group_index}:{hook_index}:{matcher}:{command}"))
+    if is_cursor:
+        # Cursor project-level hooks can run on workspace open and agent
+        # events. See https://cursor.com/docs/hooks . We only inventory
+        # command execution; prompt-based hooks are not local shell commands.
+        hooks = obj.get("hooks", {})
+        if isinstance(hooks, dict):
+            cursor = 0
+            for event, entries in hooks.items():
+                if not isinstance(entries, list):
+                    continue
+                for index, entry in enumerate(entries):
+                    if not isinstance(entry, dict) or not isinstance(entry.get("command"), str):
+                        continue
+                    if entry.get("type", "command") != "command":
+                        continue
+                    command = entry["command"]
+                    match = re.search(r'"command"\s*:', text[cursor:])
+                    start = cursor + match.start() if match else 0
+                    if match:
+                        cursor += match.end()
+                    matcher = entry.get("matcher")
+                    trigger = f"Cursor {redact(str(event), 50)} event"
+                    if isinstance(matcher, str):
+                        trigger += f" (matcher: {redact(matcher, 45)})"
+                    result.append(emit(
+                        rule="cursor-hook-command", path=path, text=text,
+                        needle='"command"', start=max(0, start),
+                        trigger=trigger,
+                        title=f"Cursor project hook: {redact(str(event), 60)}",
+                        command=command,
+                        base="high" if event in ("workspaceOpen", "sessionStart") else "medium",
+                        identity=f"{event}:{index}:{command}",
+                    ))
     if is_mcp:
         servers = obj.get("mcpServers", obj.get("servers", {}))
         if isinstance(servers, dict):

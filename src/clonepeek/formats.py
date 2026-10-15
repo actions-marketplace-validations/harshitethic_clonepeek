@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import re
 
+from . import __version__
 from .models import Finding, SEVERITIES
 
 
@@ -130,7 +131,7 @@ def sarif(findings: list[Finding]) -> dict:
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "runs": [{
-            "tool": {"driver": {"name": "ClonePeek", "version": "0.2.0", "informationUri": "https://github.com/harshitethic/clonepeek",
+            "tool": {"driver": {"name": "ClonePeek", "version": __version__, "informationUri": "https://github.com/harshitethic/clonepeek",
                                 "rules": [{"id": r, "name": r} for r in rules]}},
             "results": [{
                 "ruleId": f.rule,

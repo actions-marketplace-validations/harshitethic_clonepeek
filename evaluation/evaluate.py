@@ -17,6 +17,7 @@ RULES = (
     "devcontainer-feature",
     "mcp-server-process",
     "claude-hook-command",
+    "cursor-hook-command",
     "config-parse",
     "oversize-config",
     "unreadable-config",
