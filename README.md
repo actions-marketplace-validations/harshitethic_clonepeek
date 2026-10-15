@@ -148,6 +148,8 @@ jobs:
 
 The action provides `findings`, `new-findings`, `critical`, `high`, `scanned`, and `report-path` outputs and a source-free count summary in the GitHub Actions job summary. Reports and full step logs **can contain sensitive source excerpts**: do not make artifacts public without reviewing them. Set `fail-on: none` for report-only use; valid thresholds are `low`, `medium`, `high`, or `critical`. `changed-since` requires reachable Git history and ignores untracked files. Explicit checkout permissions are `contents: read`, and normal scans make no network requests (the action may download a trusted Python runtime through `actions/setup-python`). See [integration guide](docs/GITHUB-ACTION.md) for inputs and constraints.
 
+**Cross-repository proof:** The released action also passed a [real consumer workflow in RepoPilot](https://github.com/harshitethic/RepoPilot/actions/runs/38728091966), scanning two immutable public configuration snapshots: 7 Cursor cookbook hooks and 2 YappChat VS Code folder-open tasks. Both original source file hashes, action outputs, and rule classifications were verified. [Read the reproducible evidence](docs/CROSS-REPO-SMOKE.md). These two smoke cases are **not** representative security-accuracy data or independent developer adoption.
+
 ## CI and PR reviews
 
 ```bash
