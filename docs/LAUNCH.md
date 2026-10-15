@@ -1,6 +1,6 @@
 # ClonePeek launch kit
 
-**Status:** source repository public; GitHub release/tag, community submissions, traction, and external security validation are independent milestones. Do not claim them until verified. This file contains drafts, not evidence that a post was submitted.
+**Verified as of 2026-10-15:** [v0.3.0 release](https://github.com/harshitethic/clonepeek/releases/tag/v0.3.0) published with wheel/source assets, [CI](https://github.com/harshitethic/clonepeek/actions) green on its merge commit, [announcement](https://github.com/harshitethic/clonepeek/discussions/8) posted in this repository, and [public Cursor cookbook config smoke test](REAL-WORLD-VALIDATION.md) completed. Public smoke testing is not real-world accuracy evaluation. **The external-community posts below are still drafts, not submitted posts or proof of adoption.**
 
 ## Positioning
 
@@ -12,18 +12,36 @@
 
 **Differentiator:** Explain **trigger → command → evidence → review action**. ClonePeek is not a malware scanner, sandbox, provenance system, or replacement for in-depth security review.
 
+
+## v0.3.0 announcement proof and current angle
+
+- **GitHub announcement (posted):** https://github.com/harshitethic/clonepeek/discussions/8
+- **Public release (posted):** https://github.com/harshitethic/clonepeek/releases/tag/v0.3.0
+- **Demo:** [real CLI output](../assets/demo-output.txt), [rendered terminal preview](../assets/terminal-demo.svg), and `examples/agent-hooks` in source.
+- **Independent-format smoke test (completed):** The public `cursor/cookbook` hook config yielded seven medium command-hook entries; [method and checksum](REAL-WORLD-VALIDATION.md).
+- **Cross-platform CI (passed):** 43 unit tests, matrix of Ubuntu, Windows and macOS with Python 3.10/3.13.
+- **User adoption (not established):** a public GitHub project does not imply stars, forks, followers, a Trending ranking or verified real-world threat-detection performance.
+
+**Suggested Show HN title:** Show HN: ClonePeek – see what commands run when opening a repo or starting an AI agent
+
+**Relevant framing:** A repository can contain benign or dangerous code that fires on lifecycle events rather than a deliberate `run` command. The demonstration inventories `.cursor/hooks.json`, `.claude/settings.json`, VS Code folder-open tasks, npm lifecycle entries and other activation surfaces without executing them. The code is open-source and installable with `uvx`. The relevant question is whether the inventory is accurate, not whether a heuristic can call a repo malicious. Share the known misses and request concrete harmless reproductions.
+
+**Suggested Reddit framing:** Ask a developer-security community which *unexpected first-run code execution trigger* they have encountered; show the actual CLI finding and link the source only where community rules allow project self-promotion. Do not cross-post identical promotional copy or request stars.
+
+**Suggested technical article framing:** Reproduce a Cursor project-hook setup using the official Cursor cookbook file and scan it offline, then show the known limitations. An article written for DEV should contribute substantial independent technical substance and comply with its disclosure and AI-assistance guidelines rather than act as a product backlink.
+
 ## Show HN draft
 
 **Title:** Show HN: ClonePeek – find hidden commands before opening an unfamiliar repo
 
 I built ClonePeek after looking at attacks that use seemingly routine repository configuration to run code when a developer opens a folder or installs dependencies.
 
-It is a small Python CLI with no runtime dependencies. Point it at a local source tree and it looks for VS Code folder-open tasks, npm lifecycle hooks, devcontainer lifecycle commands/features, and local MCP process launch configs. It does not run any of those commands or send your source to a server. The output explains which trigger can run the command, shows evidence, and suggests what to review.
+It is a small Python CLI with no runtime dependencies. Point it at a local source tree and it looks for VS Code folder-open tasks, npm lifecycle hooks, devcontainers, Cursor and Claude Code command hooks, and local MCP process launch configs. It does not run any of those commands or send your source to a server. The output explains which trigger can run the command, shows evidence, and suggests what to review.
 
 Try it with the deliberately suspicious sample:
 
 ```bash
-uvx --from git+https://github.com/harshitethic/clonepeek clonepeek /path/to/repo
+uvx --from git+https://github.com/harshitethic/clonepeek@v0.3.0 clonepeek /path/to/repo
 ```
 
 It can emit JSON or SARIF for automation. I intentionally kept v0.1 scope narrow and the threat model explicit: no transitive shell-script analysis or guarantees that a repository is safe. I would appreciate real-world examples that cause false positives and recommendations for the next execution surface worth modeling.
@@ -72,7 +90,7 @@ Source + demo: https://github.com/harshitethic/clonepeek
 
 **Title:** ClonePeek v0.1: help validate real-world execution triggers
 
-The first release candidate covers editor folder-open tasks, npm lifecycle scripts, devcontainer lifecycle hooks/features and local MCP launch configurations. Tests run on Linux, macOS and Windows, Python 3.10 and 3.13. Please try it on a repository you are comfortable reviewing and report missed triggers, reproducible false positives, and cross-platform fixture cases. Do not submit secrets or live malicious endpoints.
+The current v0.3.0 release covers editor folder-open tasks, npm lifecycle scripts, devcontainer lifecycle hooks/features, Cursor and Claude Code hooks, and local MCP launch configurations. Tests run on Linux, macOS and Windows, Python 3.10 and 3.13. Please try it on a repository you are comfortable reviewing and report missed triggers, reproducible false positives, and cross-platform fixture cases. Do not submit secrets or live malicious endpoints.
 
 ## Adoption checklist
 
