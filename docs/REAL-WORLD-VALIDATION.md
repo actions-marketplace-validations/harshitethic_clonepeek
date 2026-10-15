@@ -1,5 +1,7 @@
 # Public configuration smoke test — 2026-10-15
 
+**Newer consumer-level validation:** See [the verified v0.5.0 GitHub Action smoke test from a separate RepoPilot repository](CROSS-REPO-SMOKE.md), including immutable Cursor cookbook and YappChat configuration snapshots. The earlier single-file test below remains valid and is documented separately; neither establishes real-world detection accuracy or independent third-party adoption.
+
 This is an **individual external integration smoke test**, not a labeled dataset, independent security review, or real-world precision/recall estimate.
 
 We read a public Cursor hook configuration from the **official [cursor/cookbook](https://github.com/cursor/cookbook)** repository. The published source is [hooks/.cursor/hooks.json](https://github.com/cursor/cookbook/blob/main/hooks/.cursor/hooks.json). No script in the repository was executed or imported. The downloaded configuration was stored inside a temporary directory and inspected with ClonePeek's ordinary CLI.
