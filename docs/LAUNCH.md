@@ -1,6 +1,6 @@
 # ClonePeek launch kit
 
-**Verified as of 2026-10-15:** [v0.3.0 release](https://github.com/harshitethic/clonepeek/releases/tag/v0.3.0) published with wheel/source assets, [CI](https://github.com/harshitethic/clonepeek/actions) green on its merge commit, [announcement](https://github.com/harshitethic/clonepeek/discussions/8) posted in this repository, and [public Cursor cookbook config smoke test](REAL-WORLD-VALIDATION.md) completed. Public smoke testing is not real-world accuracy evaluation. **The external-community posts below are still drafts, not submitted posts or proof of adoption.**
+**Verified as of 2026-10-15:** [v0.4.1 latest release](https://github.com/harshitethic/clonepeek/releases/tag/v0.4.1) published with wheel/source assets; [main-branch CI](https://github.com/harshitethic/clonepeek/actions) green on merge commit `dfb64678`; [v0.4.1 technical discussion](https://github.com/harshitethic/clonepeek/discussions/11) published; and [public Cursor cookbook config smoke test](REAL-WORLD-VALIDATION.md) previously completed. Public smoke testing is not real-world accuracy evaluation. **The external-community posts below are still drafts, not submitted posts or proof of adoption.**
 
 ## Positioning
 
@@ -12,6 +12,20 @@
 
 **Differentiator:** Explain **trigger → command → evidence → review action**. ClonePeek is not a malware scanner, sandbox, provenance system, or replacement for in-depth security review.
 
+
+
+## v0.4.1 current release and launch materials
+
+- **Published tag:** [ClonePeek v0.4.1](https://github.com/harshitethic/clonepeek/releases/tag/v0.4.1), with wheel and source archive.
+- **Live announcement:** [ClonePeek v0.4.1: what runs inside an npm or coding-agent hook?](https://github.com/harshitethic/clonepeek/discussions/11)
+- **Reproducible demo:** `clonepeek examples/indirect-script` reports a risky command in the referenced `scripts/setup.sh:4` and links back to npm's `postinstall` event. The example never executes any script.
+- **Patch fix:** `--changed-since HEAD` inspects tracked changed, explicitly referenced `.sh` files even when the parent config is unchanged. Dynamic and untracked references remain unsupported.
+- **Quality gates:** 55 unit tests and the six-matrix Linux/macOS/Windows CI jobs passed; both relevant main-branch workflow runs completed successfully.
+- **Actual adoption:** Last public check still showed **0 stars and 0 forks**. Do not represent own release/announcement activity as genuine adoption.
+
+**Show HN update:** "Show HN: ClonePeek – inspect shell scripts triggered by npm and AI-agent hooks". Explain the exact read-only semantics and the known blind spots, not a vague malware-detection claim. Link to the v0.4.1 tag and the concrete demo.
+
+**External posting status:** A prior Hacker News submission attempt was blocked by login, and DEV redirected to authentication. Neither external submission has been verified as posted. These are prepared materials, not evidence of external traffic.
 
 ## v0.3.0 announcement proof and current angle
 
