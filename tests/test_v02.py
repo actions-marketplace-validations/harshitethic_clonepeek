@@ -42,7 +42,7 @@ class ClaudeHookTests(unittest.TestCase):
         ]}]}}
         self.assertEqual(inspect(".claude/settings.json", json.dumps(data)), [])
         self.assertTrue(recognized(".claude/settings.json"))
-        self.assertFalse(recognized(".claude/settings.local.json"))
+        self.assertTrue(recognized(".claude/settings.local.json"))
         self.assertFalse(recognized("settings.json"))
 
     def test_hook_demo_reports_correct_lines(self):
@@ -105,16 +105,18 @@ class SafetyAndEvaluationTests(unittest.TestCase):
 
     def test_fixture_evaluation_has_known_false_positive_and_false_negative(self):
         report = evaluate()
-        self.assertEqual(report["cases"], 46)
-        self.assertEqual((report["tp"], report["fp"], report["fn"], report["tn"]), (15, 3, 2, 26))
+        self.assertEqual(report["cases"], 51)
+        self.assertEqual((report["tp"], report["fp"], report["fn"], report["tn"]), (18, 4, 2, 27))
         self.assertEqual(report["by_rule"]["npm-lifecycle"]["support"], 12)
         self.assertEqual(report["by_rule"]["vscode-folder-open"]["support"], 5)
-        self.assertEqual(report["by_rule"]["claude-hook-command"]["support"], 7)
+        self.assertEqual(report["by_rule"]["claude-hook-command"]["support"], 8)
+        self.assertEqual(report["by_rule"]["cursor-hook-command"]["support"], 4)
         self.assertIn("synthetic", report["disclaimer"].lower())
         names = {r["id"] for r in report["outcomes"] if r["expected_high_risk"] != r["predicted_high_risk"]}
         self.assertEqual(names, {
             "benign-editor-auto", "indirect-danger-missed",
             "editor-hidden-echo", "editor-routine-check", "npm-indirect-shell-opaque",
+            "cursor-benign-workspace-open",
         })
 
 

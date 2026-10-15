@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-10-15
+
+- Add Cursor project command-hook scanning for `.cursor/hooks.json`, including trusted workspace open, session and tool events, trigger descriptions, and source-line evidence.
+- Add Claude `.claude/settings.local.json` detection and fix SARIF version metadata to reflect the installed package.
+- Extend transparent synthetic evaluation to 51 cases, including both benign and suspicious Cursor hooks; document known false positives and limitations.
+- Provide a combined agent-hooks demonstration, an authentic terminal preview, and explicit documentation.
+- Add regression tests for Cursor configuration, JSONC, scoped detection, and version metadata.
+
 ## 0.2.2 — 2026-10-14
 
 - Expand the labeled, synthetic evaluation corpus from 12 to 46 cases,
