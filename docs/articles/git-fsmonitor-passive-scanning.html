@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0c101b">
+<meta name="description" content="Why a repository's Git fsmonitor helper ran during a passive diff audit, how ClonePeek reproduced the problem, and the execution safeguards a read-only scanner needs.">
+<link rel="canonical" href="https://harshitethic.github.io/clonepeek/articles/git-fsmonitor-passive-scanning.html">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The git diff that wasn't read-only | ClonePeek engineering notes">
+<meta property="og:description" content="A tiny repo-controlled Git helper broke the passive-scanning assumption. Here's the regression test and fix, with important limits.">
+<meta property="og:image" content="https://harshitethic.github.io/clonepeek/og.png">
+<meta property="og:url" content="https://harshitethic.github.io/clonepeek/articles/git-fsmonitor-passive-scanning.html">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"The git diff that wasn't read-only","description":"A case study in repository-configured Git helpers and defensive design for passive scanners","author":{"@type":"Person","name":"Harshit Sharma","url":"https://github.com/harshitethic"},"datePublished":"2026-10-16","dateModified":"2026-10-16","publisher":{"@type":"Organization","name":"ClonePeek","url":"https://harshitethic.github.io/clonepeek/"},"mainEntityOfPage":"https://harshitethic.github.io/clonepeek/articles/git-fsmonitor-passive-scanning.html","isAccessibleForFree":true}</script>
+<title>The git diff that wasn't read-only — ClonePeek engineering notes</title>
+<style>
+:root{color-scheme:dark;--bg:#0c101b;--ink:#eef1fb;--muted:#a3afc8;--accent:#c0abff;--border:#303951;--code:#80eadc}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);background:var(--bg);font:16px/1.84 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+a{color:var(--accent);text-underline-offset:3px}
+a:hover{color:#e1d6ff}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+header{border-bottom:1px solid #ffffff21;background:#121828;position:sticky;top:0;z-index:5}
+nav{max-width:1080px;margin:auto;min-height:66px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+nav a{text-decoration:none;font-size:14px} nav a:first-child{font-size:21px;font-weight:800;letter-spacing:-.06em;color:var(--ink)}
+nav span{color:var(--code)} nav .links{display:flex;gap:20px;flex-wrap:wrap}
+main{max-width:780px;margin:0 auto;padding:85px 24px 110px}
+.kicker{font-weight:750;letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--code)}
+h1{font-size:clamp(44px,6.5vw,72px);line-height:1.08;letter-spacing:-.067em;margin:18px 0 25px;font-weight:780}
+h2{font-size:clamp(26px,3vw,33px);letter-spacing:-.04em;line-height:1.2;margin:56px 0 16px}
+h3{font-size:20px;letter-spacing:-.025em;margin:29px 0 10px}
+p{margin:0 0 21px;color:#bdc7dc}strong{color:var(--ink)}
+.lead{font-size:19px;color:#c5cde2;line-height:1.72}
+.byline{color:#93a2be;font-size:13px;margin-top:28px;padding-bottom:30px;border-bottom:1px solid var(--border)}
+pre{padding:23px;overflow-x:auto;white-space:pre;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;background:#101829;border:1px solid #39445d;border-radius:12px;color:#c3f0e4}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.91em;color:#d0bcff}
+pre code{color:inherit;font-size:1em}
+ul{color:#bdc7dc;padding-left:24px;margin:0 0 25px}li{padding-left:3px;margin-bottom:10px}
+aside{padding:20px 23px;border-left:3px solid #9582db;margin:28px 0;background:#181d30}
+aside p:last-child{margin-bottom:0}
+hr{border:0;border-top:1px solid var(--border);margin:60px 0 35px}
+.cta{border:1px solid #5c508b;background:linear-gradient(145deg,#26233f,#171c2c);padding:28px;border-radius:16px;margin-top:45px}
+.cta h2{margin:0 0 12px}
+.cta a{display:inline-block;padding:10px 17px;margin:8px 10px 0 0;border:1px solid #8d7bc9;border-radius:10px;text-decoration:none;font-size:14px;font-weight:680}
+footer{border-top:1px solid var(--border);color:#8796b0;text-align:center;padding:28px 20px;font-size:13px}
+@media(max-width:620px){main{padding-top:57px}nav .links a:nth-child(1){display:none}pre{padding:15px;font-size:12px}}
+</style>
+</head>
+<body>
+<header><nav aria-label="Navigation"><a href="../">clonepeek<span>.</span></a><div class="links"><a href="../">Home</a><a href="https://github.com/harshitethic/clonepeek/blob/main/docs/THREAT_MODEL.md">Threat model</a><a href="https://github.com/harshitethic/clonepeek">GitHub ↗</a></div></nav></header>
+<main>
+<div class="kicker">Engineering notes / Open source security</div>
+<h1>The <code>git diff</code> that wasn't read-only.</h1>
+<p class="lead">We were building a tool whose defining promise was simple: inspect unfamiliar repository configuration without executing its code. Then a test revealed that an ordinary-looking Git operation could launch a program defined by the repository itself.</p>
+<div class="byline">By Harshit Sharma, ClonePeek maintainer · 16 October 2026 · 6-minute read</div>
+
+<h2 id="why">A small assumption with big consequences</h2>
+<p>You're about to open a GitHub repository in your editor. You want to know which commands may run through package installation, trusted workspace tasks, devcontainer startup, MCP servers or an AI coding agent. A static auditor looks like a reasonable first line of review.</p>
+<p><a href="https://github.com/harshitethic/clonepeek">ClonePeek</a> was designed for that job. Its scanner traverses recognized configuration files using bounded reads and reports <strong>trigger → command → source location → suggested review</strong>, without launching the project's npm scripts, shell hooks, or coding agents.</p>
+<p>There is a useful optional flag: <code>--changed-since</code> filters findings to Git changes. Our first implementation called a local <code>git diff</code> command. It felt harmless. Diffing files isn't building the repository, right?</p>
+<p>The catch is that <strong>Git's execution behavior can depend on configuration the repository controls</strong>. In particular, a local <code>core.fsmonitor</code> setting can name a hook-like helper program. Depending on the command and Git version, Git may invoke that helper while refreshing file state. A subprocess invoked by the auditor was therefore enough to break our passive-scan invariant.</p>
+
+<h2 id="reproduction">Making the regression observable</h2>
+<p>To test this safely, we created a disposable local fixture with a deliberately inert helper that merely wrote a marker file. We did not use a real suspicious repository, download an executable payload, or depend on a network request.</p>
+<p>The test asked one specific question: <strong>can the audit complete without creating that marker?</strong> Before the fix, the marker appeared. After the fix, it did not. Reproducing the violation as a filesystem side effect made it much harder for later refactors to accidentally reintroduce it.</p>
+<p>This is not a claim that every <code>git diff</code> invocation on every operating system will execute an fsmonitor helper. It's a concrete example of why "I only ran Git" doesn't establish that no repo-defined execution occurred.</p>
+<p>The exact reproduction and safety constraints are in the <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/GIT-CONFIG-ISOLATION.md">Git configuration isolation notes</a>; the patch and review trail are in <a href="https://github.com/harshitethic/clonepeek/pull/5">PR #5</a>.</p>
+
+<h2 id="hardening">The defense has to cover the helper process</h2>
+<p>Python's read-only filesystem operations were not the issue. The boundary changed when the scanner delegated work to Git, a separate executable capable of honoring configuration, helpers and extensions. Fixing it required controlling <em>both</em> process arguments and the environment.</p>
+<pre><code># Excerpted structure, not a standalone security sandbox
+argv = [
+    "git",
+    "-c", "core.fsmonitor=false",
+    "-c", f"core.hooksPath={os.devnull}",
+    "-c", "diff.external=",
+    "-c", "protocol.ext.allow=never",
+    "-c", "protocol.file.allow=never",
+    "-C", str(repo_root),
+    "diff", "--no-ext-diff", "--no-textconv",
+    "--name-only", "-z", "--diff-filter=ACMR",
+    reference, "--",
+]</code></pre>
+<p>The scanner also strips inherited Git-specific variables and dangerous loader/Python environment overrides, disables system/global Git config for this invocation, rejects unexpected ref syntax, bounds subprocess runtime, and treats a failed diff as an error rather than silently reporting an empty result. These are <strong>defense-in-depth choices for an explicitly limited operation</strong>; they are not equivalent to process isolation.</p>
+<aside><p><strong>Important limit:</strong> This hardening is targeted to the Git invocation used by ClonePeek. Git and the host operating system have more behavior than one wrapper can model. Do not treat ClonePeek as a sandbox, a malware detector, or a reliable way to execute other tools against actively malicious content.</p></aside>
+
+<h2 id="scripts">The next surprise was a script one file away</h2>
+<p>Another coverage gap turned out to be less dramatic but equally useful. A <code>package.json</code> file could contain a short lifecycle command such as <code>sh ./scripts/setup.sh</code>. A surface-only scanner recognized the install hook, but the interesting command might live inside <code>scripts/setup.sh</code>, outside the JSON.</p>
+<p>We added <strong>bounded, first-hop, read-only inspection</strong> for statically identifiable local <code>.sh</code> references. It checks that paths stay inside the repository, rejects symlink escapes and unsafe file types, and limits references, file sizes and lines read. It doesn't shell-expand arbitrary expressions or chase unbounded nested scripts.</p>
+<p>That sounds modest—and that's intentional. A scanner that executes the referenced script "to find out what it does" would solve one detection problem by discarding its own execution boundary. ClonePeek instead tells you what it can and can't see.</p>
+
+<h2 id="checks">Testing a release from outside the repository</h2>
+<p>Internal tests can miss assumptions about packaging. The v0.5.0 GitHub Action therefore has separate integration CI on Linux, macOS and Windows, plus an actual consumer workflow in another repository. That consumer workflow read two pinned, public configuration snapshots (Cursor hooks and VS Code folder-open tasks), checked their Git blob hashes, and asserted paths and classifications. No upstream hooks were run.</p>
+<p>These are narrow <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/CROSS-REPO-SMOKE.md">smoke tests</a>, not independent outside-user adoption or an estimate of detection accuracy. The <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/EVALUATION.md">hand-authored synthetic evaluation</a> deliberately includes false positives and false negatives; it is not representative of internet repositories.</p>
+
+<h2 id="takeaways">A checklist for tools that inspect untrusted projects</h2>
+<ul>
+  <li><strong>Map all execution paths, including your own helper commands.</strong> A safe-looking wrapper doesn't make delegated subprocesses inert.</li>
+  <li><strong>Write regression tests around side effects, not only output strings.</strong> A marker file can reveal unexpected execution even when the scanner report looks correct.</li>
+  <li><strong>Constrain filesystem reads and traversal.</strong> Symlinks, special files, large files and path escapes matter even when you never execute a script.</li>
+  <li><strong>Separate supported detection from safety claims.</strong> A command hook is a review prompt, not proof that an author is malicious.</li>
+  <li><strong>Make failure visible.</strong> Parse errors and unsupported references should not silently become "nothing found."</li>
+</ul>
+<p>If you're auditing a repository you don't trust, the safest workflow begins before installing its dependencies or marking it trusted in an IDE. The <a href="https://github.com/harshitethic/clonepeek/blob/main/docs/BEFORE-YOU-TRUST-A-REPO.md">five-minute pre-trust audit guide</a> covers practical next steps.</p>
+
+<div class="cta">
+  <h2>Try it. Critique it. Improve it.</h2>
+  <p>ClonePeek v0.5.0 is MIT licensed, has no runtime Python dependencies, and exposes its threat model publicly. We're looking for real, inert examples of execution hooks it misses or overclassifies—not drive-by stars or artificial PRs.</p>
+  <pre><code>uvx --from git+https://github.com/harshitethic/clonepeek@v0.5.0 \
+  clonepeek /path/to/repository</code></pre>
+  <a href="https://github.com/harshitethic/clonepeek">Browse source ↗</a>
+  <a href="https://github.com/harshitethic/clonepeek/issues/19">Contribute a real improvement ↗</a>
+  <a href="../">Live demo ↗</a>
+</div>
+</main>
+<footer>ClonePeek engineering notes · MIT project · No analytics or tracking on this page</footer>
+</body>
+</html>
