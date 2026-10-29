@@ -38,7 +38,9 @@ def jsonc_to_json(text: str) -> str:
             if block:
                 while i + 1 < n and not (chars[i] == "*" and chars[i + 1] == "/"):
                     i += 1
-                i = min(n, i + 2)
+                if i + 1 >= n:
+                    raise ValueError("Unterminated JSONC block comment")
+                i += 2
             else:
                 while i < n and chars[i] != "\n":
                     i += 1
@@ -104,6 +106,8 @@ def redact(value: str, length: int = 240) -> str:
         " " if ord(char) < 32 or 127 <= ord(char) <= 159 or char in "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
         else char for char in value
     )
+    value = re.sub(r"(?i)(\bauthorization\s*[:=]\s*basic\s+)[A-Za-z0-9+/=]+",
+                   r"\1[REDACTED]", value)
     value = re.sub(r"(?i)(gh[pousr]_[A-Za-z0-9_]{12,}|github_pat_[A-Za-z0-9_]{12,}|sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16})", "[REDACTED]", value)
 
     value = re.sub(r"\bglpat-[A-Za-z0-9_-]{12,}\b", "[REDACTED]", value)
@@ -115,6 +119,12 @@ def redact(value: str, length: int = 240) -> str:
     value = re.sub(r"\bASIA[0-9A-Z]{16}\b", "[REDACTED]", value)
     value = re.sub(r"(?i)(\bauthorization\s*[:=]\s*bot\s+)\S+", r"\1[REDACTED]", value)
     value = re.sub(r"(?i)\b(?P<scheme>https?|socks5h?|ftp|ssh)://[^\s/@]+:[^\s/@]+@", lambda m: m["scheme"] + "://[REDACTED]@", value)
+    # Environment-style names often prefix credential words (AWS_SECRET_ACCESS_KEY).
+    key = r"[A-Za-z0-9_]*(?:password|passwd|token|api[_-]?key|secret|private[_-]?key|credential)[A-Za-z0-9_]*"
+    value = re.sub(rf"""(?i)\b(?P<key>{key})\s*[=:]\s*(?P<quote>[\x27\x22])(?P<secret>.*?)(?P=quote)""",
+                   lambda m: f"{m['key']}={m['quote']}[REDACTED]{m['quote']}", value)
+    value = re.sub(rf"""(?i)\b(?P<key>{key})\s*[=:]\s*(?P<secret>[^\s,;\x27\x22\\]+)""",
+                   lambda m: f"{m['key']}=[REDACTED]", value)
     # Quoted assignments may contain spaces; mask the whole credential.
     value = re.sub(
         r"""(?i)\b(?P<key>password|token|api[_-]?key|secret)\s*[=:]\s*(?P<quote>['"])(?P<secret>.*?)(?P=quote)""",

@@ -10,6 +10,8 @@ from .formats import line_for, load_json, redact
 from .models import Finding
 
 FETCH_EXEC = re.compile(r"(?is)(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?(?:ba?sh|zsh|sh|python\d?|node|pwsh|powershell|cmd|iex|invoke-expression)\b|\b(?:bash|sh|pwsh|powershell)\s+<(?:\(|\s)*\s*(?:curl|wget)\b")
+FETCH_EXEC_ABSOLUTE = re.compile(r"(?is)\b(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?/(?:usr/)?bin/(?:bash|sh|zsh|pwsh|python\d?|node)\b")
+FETCH_EXEC_ENV = re.compile(r"(?is)\b(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?/(?:usr/)?bin/env\s+(?:-[A-Za-z]+\s+)?(?:bash|sh|zsh|python\d?|node)\b")
 # PowerShell download/execute also appears as iex (iwr URI).Content, not
 # just the common iwr URI | iex pipe. This is a narrow static heuristic:
 # it requires an Invoke-WebRequest call nested in Invoke-Expression.
@@ -18,18 +20,20 @@ POWERSHELL_EVAL_FETCH = re.compile(
 )
 CREDENTIALS = re.compile(r"(?i)(?:\$\{?(?:[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY|PRIVATE_KEY|CREDENTIAL)[A-Z0-9_]*)\}?|process\.env|os\.environ|\.env\b|id_rsa\b|\.aws/credentials|\.ssh/)")
 DESTRUCTIVE = re.compile(r"(?i)(?:\brm\s+-[a-z]*r[a-z]*f\b|\brm\s+-[a-z]*f[a-z]*r\b|\bformat\s+[a-z]:|\bmkfs\.|\bdel\s+/[fsq]|\bremove-item\b[^\n]{0,120}-(?:recurse|r)\b)")
+DESTRUCTIVE_SPLIT = re.compile(r"(?i)\brm(?:\s+-[rf]){2}(?=\s|$)")
+DESTRUCTIVE_LONG = re.compile(r"(?i)\brm\s+--(?:recursive\s+--force|force\s+--recursive)(?=\s|$)")
 ENCODED = re.compile(r"(?i)(?:base64\s+(?:-d|--decode)|\batob\s*\(|\bfrombase64string\s*\(|\beval\s*\(|\bexec\s*\(|\b(?:powershell|pwsh)(?:\.exe)?\b[^\n]{0,140}-(?:encodedcommand|enc)\b)")
-NETWORK = re.compile(r"(?i)\b(?:curl|wget|fetch|iwr|invoke-webrequest)\b|https?://")
+NETWORK = re.compile(r"(?i)\b(?:curl|wget|fetch|iwr|irm|invoke-webrequest|invoke-restmethod)\b|https?://")
 SHELL = re.compile(r"(?i)\b(?:bash|sh|zsh|pwsh|powershell|cmd(?:\.exe)?)\b")
 
 
 def assess(command: str, base: str) -> tuple[str, str, str]:
     """Return severity, reason, and recommendation. Heuristics, not proof."""
-    if FETCH_EXEC.search(command) or POWERSHELL_EVAL_FETCH.search(command):
+    if FETCH_EXEC.search(command) or FETCH_EXEC_ABSOLUTE.search(command) or FETCH_EXEC_ENV.search(command) or POWERSHELL_EVAL_FETCH.search(command):
         return "critical", "A network response appears to be piped directly to a command interpreter.", "Remove fetch-and-execute. Download, verify and pin artifacts before running."
     if CREDENTIALS.search(command) and NETWORK.search(command):
         return "critical", "Credentials and a network destination appear together; review for exfiltration.", "Inspect the full command and all referenced files before trusting it."
-    if DESTRUCTIVE.search(command):
+    if DESTRUCTIVE.search(command) or DESTRUCTIVE_SPLIT.search(command) or DESTRUCTIVE_LONG.search(command):
         return "high", "This command contains a potentially destructive filesystem operation.", "Verify paths and scope; avoid automatic destructive commands."
     if ENCODED.search(command):
         return "high", "Encoded or dynamic execution makes behavior harder to inspect.", "Replace opaque execution with reviewable source and locked dependencies."
@@ -212,8 +216,10 @@ def inspect(path: str, text: str) -> list[Finding]:
                         identity=f"{event}:{index}:{command}",
                     ))
     if is_mcp:
-        servers = obj.get("mcpServers", obj.get("servers", {}))
-        if isinstance(servers, dict):
+        for container in ("mcpServers", "servers"):
+            servers = obj.get(container, {})
+            if not isinstance(servers, dict):
+                continue
             for name, cfg in servers.items():
                 if not isinstance(cfg, dict) or not isinstance(cfg.get("command"), str):
                     continue
