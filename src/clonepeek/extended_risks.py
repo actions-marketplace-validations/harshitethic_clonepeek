@@ -15,6 +15,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("powershell-restmethod-eval", re.compile(
         r"(?is)\b(?:iex|invoke-expression)\s*\(\s*(?:irm|invoke-restmethod)\b"
     )),
+    ("shell-curl-substitution", re.compile(
+        r"""(?is)\b(?:sh|bash|zsh)\s+-c\s+["']?\$\(\s*curl\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
