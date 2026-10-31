@@ -43,7 +43,7 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
         r"""(?is)\b(?:iex|invoke-expression)\s*\(?\s*\(?\s*new-object\s+net\.webclient\b.{0,250}\bdownloadstring\s*\("""
     )),
     ("powershell-webclient-scriptblock", re.compile(
-        r"""(?is)\[scriptblock\]\s*::\s*create\s*\(.{0,250}\bdownloadstring\s*\("""
+        r"""(?is)\[scriptblock\]\s*::\s*create\s*\(.{0,250}\bdownloadstring\s*\(.{0,250}\)\s*\)\s*\.\s*invoke\s*\("""
     )),
     ("powershell-restmethod-pipe-exec", re.compile(
         r"""(?is)\b(?:irm|invoke-restmethod)\b[^\n|]{0,250}\|\s*(?:iex|invoke-expression)\b"""
@@ -61,7 +61,7 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("git-clean-force", re.compile(
-        r"""(?is)\bgit\s+clean\s+-(?=[a-z]*f)(?=[a-z]*d)[a-z]+\b"""
+        r"""(?is)\bgit\s+clean\s+-(?=[a-z]*f)(?=[a-z]*d)(?![a-z]*n)[a-z]+\b"""
     )),
     ("git-reset-hard", re.compile(
         r"""(?is)\bgit\s+reset\s+--hard\b"""
@@ -88,7 +88,7 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
         r"""(?is)\bblkdiscard\s+(?:-[a-z]+\s+)?/dev/\S+"""
     )),
     ("shred-file", re.compile(
-        r"""(?is)\bshred\s+(?:-[a-z]+\s+)?\S+"""
+        r"""(?is)\bshred\s+(?:-[a-z]+\s+)*(?!-)\S+"""
     )),
     ("diskutil-erase", re.compile(
         r"""(?is)\bdiskutil\s+erase(?:disk|volume)\b"""
