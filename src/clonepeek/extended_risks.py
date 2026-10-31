@@ -96,6 +96,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("windows-rmdir-recursive", re.compile(
         r"""(?is)\b(?:rd|rmdir)\s+/(?:s|q)\b.{0,80}\s+/(?:s|q)\b"""
     )),
+    ("docker-prune-volumes", re.compile(
+        r"""(?is)\bdocker\s+system\s+prune\b.{0,120}\s--volumes\b"""
+    )),
 )
 
 
