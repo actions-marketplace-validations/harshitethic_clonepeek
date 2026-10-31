@@ -87,6 +87,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("blkdiscard-device", re.compile(
         r"""(?is)\bblkdiscard\s+(?:-[a-z]+\s+)?/dev/\S+"""
     )),
+    ("shred-file", re.compile(
+        r"""(?is)\bshred\s+(?:-[a-z]+\s+)?\S+"""
+    )),
 )
 
 
