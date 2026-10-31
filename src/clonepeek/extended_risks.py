@@ -36,6 +36,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("perl-curl-substitution", re.compile(
         r"""(?is)\bperl\s+-e\s+["']?\$\(\s*curl\b"""
     )),
+    ("ruby-curl-substitution", re.compile(
+        r"""(?is)\bruby\s+-e\s+["']?\$\(\s*curl\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
