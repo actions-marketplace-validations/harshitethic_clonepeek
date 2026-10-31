@@ -24,6 +24,33 @@ ClonePeek uses static rules. Severity reflects *review urgency*, not proof that 
 
 These patterns are conservative and imperfect: commands can hide behavior behind scripts, aliases, language eval, alternate encodings, multi-line expressions and shell substitution. Conversely, legitimate lifecycle scripts may be high severity.
 
+## Additional command review (October 2026)
+
+The extended classifier adds **29 individually named static signatures**
+for execution-capable configuration entries. These supplement rather than
+replace the core fetch-and-execute, credential, and encoded-code rules.
+
+- **Remote-code execution:** command substitution into shell and language
+  interpreters (including `bash -c`, `eval`, Python, Node.js, Perl, and Ruby);
+  PowerShell REST/WebClient expression execution; and downloaded content
+  piped to BusyBox, Perl, or PHP.
+- **Potential data loss:** force-clean and hard-reset Git commands,
+  `find -delete` and `find -exec rm`, `rsync --delete`,
+  `robocopy /MIR`, block device overwrites and erasure, recursive Windows
+  directory removal, Docker volume pruning, and automatic Terraform destroy.
+
+**Important limits:** these rules inspect command *text* only. They cannot
+prove a command ran, infer every shell quoting context, or determine whether
+a target path is valuable. A safe-looking wrapper can hide dangerous behavior,
+and a quoted example can be flagged. The command catalog intentionally avoids
+executing, resolving, or fetching anything from the scanned repository.
+
+The regression suite in `tests/test_extended_risks.py` checks each signature
+through the severity assessor and the npm lifecycle integration, plus safe
+alternatives such as `git clean -ndfx`, `shred --help`, and
+`wipefs --no-act`. It uses only illustrative `.invalid` URLs and
+never executes the example commands.
+
 ## Output stability
 
 Fingerprints hash the rule, relative path, trigger and raw command identity, not the line number. An inserted comment does not invalidate a baseline, while a changed command usually does. Baselines do not auto-update. `--fail-on` uses `critical > high > medium > low` and excludes exact fingerprints present in an explicit baseline.
