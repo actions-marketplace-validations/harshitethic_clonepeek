@@ -42,6 +42,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("powershell-webclient-eval", re.compile(
         r"""(?is)\b(?:iex|invoke-expression)\s*\(?\s*\(?\s*new-object\s+net\.webclient\b.{0,250}\bdownloadstring\s*\("""
     )),
+    ("powershell-webclient-scriptblock", re.compile(
+        r"""(?is)\[scriptblock\]\s*::\s*create\s*\(.{0,250}\bdownloadstring\s*\("""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
