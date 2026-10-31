@@ -93,6 +93,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("diskutil-erase", re.compile(
         r"""(?is)\bdiskutil\s+erase(?:disk|volume)\b"""
     )),
+    ("windows-rmdir-recursive", re.compile(
+        r"""(?is)\b(?:rd|rmdir)\s+/(?:s|q)\b.{0,80}\s+/(?:s|q)\b"""
+    )),
 )
 
 
