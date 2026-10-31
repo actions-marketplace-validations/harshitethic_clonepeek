@@ -39,6 +39,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("ruby-curl-substitution", re.compile(
         r"""(?is)\bruby\s+-e\s+["']?\$\(\s*curl\b"""
     )),
+    ("powershell-webclient-eval", re.compile(
+        r"""(?is)\b(?:iex|invoke-expression)\s*\(?\s*\(?\s*new-object\s+net\.webclient\b.{0,250}\bdownloadstring\s*\("""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
