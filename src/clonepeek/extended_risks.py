@@ -81,6 +81,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("dd-block-overwrite", re.compile(
         r"""(?is)\bdd\s+(?:(?![;&|\n]).){0,250}\bof=/dev/(?:sd[a-z]|nvme\d+n\d+|vd[a-z]|disk\d+)\b"""
     )),
+    ("wipefs-device", re.compile(
+        r"""(?is)\bwipefs\s+(?:-[a-z]+\s+)?/dev/\S+"""
+    )),
 )
 
 
