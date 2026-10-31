@@ -54,6 +54,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("perl-piped-exec", re.compile(
         r"""(?is)\b(?:curl|wget)\b[^\n|]{0,250}\|\s*perl\b"""
     )),
+    ("php-piped-exec", re.compile(
+        r"""(?is)\b(?:curl|wget)\b[^\n|]{0,250}\|\s*php\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
