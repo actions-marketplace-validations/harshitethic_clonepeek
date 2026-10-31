@@ -75,6 +75,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("rsync-delete", re.compile(
         r"""(?is)\brsync\b.{0,160}\s--delete(?:\b|=)"""
     )),
+    ("robocopy-mirror", re.compile(
+        r"""(?is)\brobocopy\b.{0,160}\s/(?:mir|purge)\b"""
+    )),
 )
 
 
