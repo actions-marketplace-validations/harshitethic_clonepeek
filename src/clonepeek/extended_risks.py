@@ -45,6 +45,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("powershell-webclient-scriptblock", re.compile(
         r"""(?is)\[scriptblock\]\s*::\s*create\s*\(.{0,250}\bdownloadstring\s*\("""
     )),
+    ("powershell-restmethod-pipe-exec", re.compile(
+        r"""(?is)\b(?:irm|invoke-restmethod)\b[^\n|]{0,250}\|\s*(?:iex|invoke-expression)\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
