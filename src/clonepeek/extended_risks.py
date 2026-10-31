@@ -63,6 +63,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("git-clean-force", re.compile(
         r"""(?is)\bgit\s+clean\s+-(?=[a-z]*f)(?=[a-z]*d)[a-z]+\b"""
     )),
+    ("git-reset-hard", re.compile(
+        r"""(?is)\bgit\s+reset\s+--hard\b"""
+    )),
 )
 
 
