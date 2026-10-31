@@ -99,6 +99,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("docker-prune-volumes", re.compile(
         r"""(?is)\bdocker\s+system\s+prune\b.{0,120}\s--volumes\b"""
     )),
+    ("terraform-destroy-auto", re.compile(
+        r"""(?is)\bterraform\s+destroy\b.{0,120}--auto-approve\b"""
+    )),
 )
 
 
