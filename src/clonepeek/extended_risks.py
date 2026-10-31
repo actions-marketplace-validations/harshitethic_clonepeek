@@ -72,6 +72,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("find-exec-rm", re.compile(
         r"""(?is)\bfind\s+\S+.{0,160}\s+-exec\s+(?:rm|shred)\b"""
     )),
+    ("rsync-delete", re.compile(
+        r"""(?is)\brsync\b.{0,160}\s--delete(?:\b|=)"""
+    )),
 )
 
 
