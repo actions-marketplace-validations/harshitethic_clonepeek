@@ -48,6 +48,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("powershell-restmethod-pipe-exec", re.compile(
         r"""(?is)\b(?:irm|invoke-restmethod)\b[^\n|]{0,250}\|\s*(?:iex|invoke-expression)\b"""
     )),
+    ("busybox-piped-exec", re.compile(
+        r"""(?is)\b(?:curl|wget)\b[^\n|]{0,250}\|\s*busybox\s+(?:sh|ash)\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
