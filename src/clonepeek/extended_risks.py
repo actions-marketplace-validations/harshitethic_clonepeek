@@ -18,6 +18,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("shell-curl-substitution", re.compile(
         r"""(?is)\b(?:sh|bash|zsh)\s+-c\s+["']?\$\(\s*curl\b"""
     )),
+    ("shell-wget-substitution", re.compile(
+        r"""(?is)\b(?:sh|bash|zsh)\s+-c\s+["']?\$\(\s*wget\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
