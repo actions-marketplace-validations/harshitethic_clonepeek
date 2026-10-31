@@ -51,6 +51,9 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("busybox-piped-exec", re.compile(
         r"""(?is)\b(?:curl|wget)\b[^\n|]{0,250}\|\s*busybox\s+(?:sh|ash)\b"""
     )),
+    ("perl-piped-exec", re.compile(
+        r"""(?is)\b(?:curl|wget)\b[^\n|]{0,250}\|\s*perl\b"""
+    )),
 )
 
 HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
