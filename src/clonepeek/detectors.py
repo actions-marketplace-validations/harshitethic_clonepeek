@@ -8,6 +8,7 @@ from typing import Any
 
 from .formats import line_for, load_json, redact
 from .models import Finding
+from .extended_risks import classify_additional_risk
 
 FETCH_EXEC = re.compile(r"(?is)(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?(?:ba?sh|zsh|sh|python\d?|node|pwsh|powershell|cmd|iex|invoke-expression)\b|\b(?:bash|sh|pwsh|powershell)\s+<(?:\(|\s)*\s*(?:curl|wget)\b")
 FETCH_EXEC_ABSOLUTE = re.compile(r"(?is)\b(?:curl|wget|iwr|invoke-webrequest)\b[^\n|]{0,350}\|\s*(?:sudo\s+)?/(?:usr/)?bin/(?:bash|sh|zsh|pwsh|python\d?|node)\b")
@@ -33,6 +34,9 @@ def assess(command: str, base: str) -> tuple[str, str, str]:
         return "critical", "A network response appears to be piped directly to a command interpreter.", "Remove fetch-and-execute. Download, verify and pin artifacts before running."
     if CREDENTIALS.search(command) and NETWORK.search(command):
         return "critical", "Credentials and a network destination appear together; review for exfiltration.", "Inspect the full command and all referenced files before trusting it."
+    additional_risk = classify_additional_risk(command)
+    if additional_risk is not None:
+        return additional_risk
     if DESTRUCTIVE.search(command) or DESTRUCTIVE_SPLIT.search(command) or DESTRUCTIVE_LONG.search(command):
         return "high", "This command contains a potentially destructive filesystem operation.", "Verify paths and scope; avoid automatic destructive commands."
     if ENCODED.search(command):
