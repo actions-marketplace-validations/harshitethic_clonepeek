@@ -59,7 +59,11 @@ CRITICAL_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     )),
 )
 
-HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = ()
+HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("git-clean-force", re.compile(
+        r"""(?is)\bgit\s+clean\s+-(?=[a-z]*f)(?=[a-z]*d)[a-z]+\b"""
+    )),
+)
 
 
 def classify_additional_risk(command: str) -> tuple[str, str, str] | None:
