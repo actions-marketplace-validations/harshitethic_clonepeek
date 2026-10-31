@@ -78,6 +78,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("robocopy-mirror", re.compile(
         r"""(?is)\brobocopy\b.{0,160}\s/(?:mir|purge)\b"""
     )),
+    ("dd-block-overwrite", re.compile(
+        r"""(?is)\bdd\s+(?:(?![;&|\n]).){0,250}\bof=/dev/(?:sd[a-z]|nvme\d+n\d+|vd[a-z]|disk\d+)\b"""
+    )),
 )
 
 
