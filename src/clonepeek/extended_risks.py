@@ -69,6 +69,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("find-delete", re.compile(
         r"""(?is)\bfind\s+\S+.{0,160}\s+-delete\b"""
     )),
+    ("find-exec-rm", re.compile(
+        r"""(?is)\bfind\s+\S+.{0,160}\s+-exec\s+(?:rm|shred)\b"""
+    )),
 )
 
 
