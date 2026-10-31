@@ -90,6 +90,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("shred-file", re.compile(
         r"""(?is)\bshred\s+(?:-[a-z]+\s+)?\S+"""
     )),
+    ("diskutil-erase", re.compile(
+        r"""(?is)\bdiskutil\s+erase(?:disk|volume)\b"""
+    )),
 )
 
 
