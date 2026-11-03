@@ -120,6 +120,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("helm-uninstall", re.compile(
         r"""(?is)\bhelm\s+uninstall\s+(?!--help\b)[\w.-]+\b(?![^\n;&|]{0,160}--dry-run(?:=|\b))"""
     )),
+    ("aws-s3-rm-recursive", re.compile(
+        r"""(?is)\baws\s+s3\s+rm\s+s3://[^\s;&|]+(?![^\n;&|]{0,180}--dryrun\b)[^\n;&|]{0,180}\s--recursive\b"""
+    )),
 )
 
 
