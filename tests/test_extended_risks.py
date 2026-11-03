@@ -43,6 +43,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("git-force-push", 'git push origin main --force-with-lease', "high"),
     ("docker-compose-down-volumes", 'docker compose down -v', "high"),
     ("docker-volume-prune", 'docker volume prune -f', "high"),
+    ("kubectl-delete-all", 'kubectl delete pods --all --force', "high"),
 )
 
 
@@ -91,6 +92,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ('git push origin main --dry-run --force', 'low'),
             ('docker compose down', 'low'),
             ('docker volume prune --help', 'low'),
+            ('kubectl delete pods --all --dry-run=client', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
