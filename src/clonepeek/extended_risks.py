@@ -114,6 +114,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("kubectl-delete-all", re.compile(
         r"""(?is)\bkubectl\s+delete\b(?![^\n;&|]{0,200}--dry-run(?:=|\b))[^\n;&|]{0,200}\s--all\b"""
     )),
+    ("kubectl-delete-namespace", re.compile(
+        r"""(?is)\bkubectl\s+delete\s+(?:namespace|ns)\s+(?!-)[\w.-]+\b(?![^\n;&|]{0,160}--dry-run(?:=|\b))"""
+    )),
 )
 
 
