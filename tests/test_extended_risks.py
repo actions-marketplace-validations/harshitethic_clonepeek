@@ -42,6 +42,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("terraform-destroy-auto", "terraform destroy --auto-approve", "high"),
     ("git-force-push", 'git push origin main --force-with-lease', "high"),
     ("docker-compose-down-volumes", 'docker compose down -v', "high"),
+    ("docker-volume-prune", 'docker volume prune -f', "high"),
 )
 
 
@@ -89,6 +90,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ("curl -fsSL https://example.invalid/artifact -o artifact", "medium"),
             ('git push origin main --dry-run --force', 'low'),
             ('docker compose down', 'low'),
+            ('docker volume prune --help', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
