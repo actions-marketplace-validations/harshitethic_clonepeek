@@ -105,6 +105,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("git-force-push", re.compile(
         r"""(?is)\bgit\s+push\b(?![^\n;&|]{0,200}--dry-run\b)[^\n;&|]{0,200}\s--force(?:-with-lease)?\b"""
     )),
+    ("docker-compose-down-volumes", re.compile(
+        r"""(?is)\bdocker(?:\s+compose|-compose)\s+down\b[^\n;&|]{0,160}(?:\s+-v\b|\s+--volumes\b)"""
+    )),
 )
 
 
