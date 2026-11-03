@@ -40,6 +40,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("windows-rmdir-recursive", "rmdir /s /q C:\\temp\\build", "high"),
     ("docker-prune-volumes", "docker system prune -a --volumes -f", "high"),
     ("terraform-destroy-auto", "terraform destroy --auto-approve", "high"),
+    ("git-force-push", 'git push origin main --force-with-lease', "high"),
 )
 
 
@@ -85,6 +86,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ("docker system prune --filter label=keep", "low"),
             ("terraform plan", "low"),
             ("curl -fsSL https://example.invalid/artifact -o artifact", "medium"),
+            ('git push origin main --dry-run --force', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
