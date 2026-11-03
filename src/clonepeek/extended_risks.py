@@ -123,6 +123,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("aws-s3-rm-recursive", re.compile(
         r"""(?is)\baws\s+s3\s+rm\s+s3://[^\s;&|]+(?![^\n;&|]{0,180}--dryrun\b)[^\n;&|]{0,180}\s--recursive\b"""
     )),
+    ("aws-s3-bucket-delete", re.compile(
+        r"""(?is)\baws\s+s3\s+rb\s+s3://[^\s;&|]+\b(?![^\n;&|]{0,160}--dryrun\b)"""
+    )),
 )
 
 
