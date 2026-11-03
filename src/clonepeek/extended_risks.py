@@ -129,6 +129,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("terraform-apply-auto", re.compile(
         r"""(?is)\bterraform\s+apply\b[^\n;&|]{0,160}--auto-approve\b"""
     )),
+    ("gcloud-project-delete", re.compile(
+        r"""(?is)\bgcloud\s+projects\s+delete\s+(?!--help\b)[a-z][a-z0-9-]{3,}\b(?![^\n;&|]{0,160}--dry-run\b)"""
+    )),
 )
 
 
