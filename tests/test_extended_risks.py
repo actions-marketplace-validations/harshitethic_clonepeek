@@ -48,6 +48,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("helm-uninstall", 'helm uninstall payments', "high"),
     ("aws-s3-rm-recursive", 'aws s3 rm s3://example-bucket/backups --recursive', "high"),
     ("aws-s3-bucket-delete", 'aws s3 rb s3://example-bucket --force', "high"),
+    ("terraform-apply-auto", 'terraform apply -auto-approve', "high"),
 )
 
 
@@ -101,6 +102,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ('helm uninstall --help', 'low'),
             ('aws s3 rm s3://example-bucket/backups --recursive --dryrun', 'low'),
             ('aws s3 rb --help', 'low'),
+            ('terraform plan', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
