@@ -46,6 +46,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("kubectl-delete-all", 'kubectl delete pods --all --force', "high"),
     ("kubectl-delete-namespace", 'kubectl delete namespace production', "high"),
     ("helm-uninstall", 'helm uninstall payments', "high"),
+    ("aws-s3-rm-recursive", 'aws s3 rm s3://example-bucket/backups --recursive', "high"),
 )
 
 
@@ -97,6 +98,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ('kubectl delete pods --all --dry-run=client', 'low'),
             ('kubectl delete namespace production --dry-run=client', 'low'),
             ('helm uninstall --help', 'low'),
+            ('aws s3 rm s3://example-bucket/backups --recursive --dryrun', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
