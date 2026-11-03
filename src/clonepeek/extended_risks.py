@@ -102,6 +102,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("terraform-destroy-auto", re.compile(
         r"""(?is)\bterraform\s+destroy\b.{0,120}--auto-approve\b"""
     )),
+    ("git-force-push", re.compile(
+        r"""(?is)\bgit\s+push\b(?![^\n;&|]{0,200}--dry-run\b)[^\n;&|]{0,200}\s--force(?:-with-lease)?\b"""
+    )),
 )
 
 
