@@ -126,6 +126,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("aws-s3-bucket-delete", re.compile(
         r"""(?is)\baws\s+s3\s+rb\s+s3://[^\s;&|]+\b(?![^\n;&|]{0,160}--dryrun\b)"""
     )),
+    ("terraform-apply-auto", re.compile(
+        r"""(?is)\bterraform\s+apply\b[^\n;&|]{0,160}--auto-approve\b"""
+    )),
 )
 
 
