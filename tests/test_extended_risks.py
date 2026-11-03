@@ -45,6 +45,7 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("docker-volume-prune", 'docker volume prune -f', "high"),
     ("kubectl-delete-all", 'kubectl delete pods --all --force', "high"),
     ("kubectl-delete-namespace", 'kubectl delete namespace production', "high"),
+    ("helm-uninstall", 'helm uninstall payments', "high"),
 )
 
 
@@ -95,6 +96,7 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ('docker volume prune --help', 'low'),
             ('kubectl delete pods --all --dry-run=client', 'low'),
             ('kubectl delete namespace production --dry-run=client', 'low'),
+            ('helm uninstall --help', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):
