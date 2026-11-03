@@ -108,6 +108,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("docker-compose-down-volumes", re.compile(
         r"""(?is)\bdocker(?:\s+compose|-compose)\s+down\b[^\n;&|]{0,160}(?:\s+-v\b|\s+--volumes\b)"""
     )),
+    ("docker-volume-prune", re.compile(
+        r"""(?is)\bdocker\s+volume\s+prune\b(?![^\n;&|]{0,160}--help\b)"""
+    )),
 )
 
 
