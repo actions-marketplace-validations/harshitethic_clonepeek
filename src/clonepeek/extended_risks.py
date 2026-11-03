@@ -111,6 +111,9 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("docker-volume-prune", re.compile(
         r"""(?is)\bdocker\s+volume\s+prune\b(?![^\n;&|]{0,160}--help\b)"""
     )),
+    ("kubectl-delete-all", re.compile(
+        r"""(?is)\bkubectl\s+delete\b(?![^\n;&|]{0,200}--dry-run(?:=|\b))[^\n;&|]{0,200}\s--all\b"""
+    )),
 )
 
 
