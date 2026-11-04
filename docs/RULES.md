@@ -78,3 +78,15 @@ ClonePeek v0.3.0 was run against a public command-hook configuration from the of
 ## First-hop local script review
 
 In v0.4.0, explicit `sh scripts/setup.sh`, `bash ./scripts/setup.sh`, or `./scripts/setup.sh` references may be inspected when they appear in modeled execution configurations. The scanner analyzes at most **32** references, reads at most **128 KiB** and **2,000 lines** per referenced script, and never launches a script or follows symlinked references. It reports dangerous-looking text with its own source line and the originating configuration. These are plain-text heuristics; quoted examples and unreachable branches can generate false positives. Dynamic paths, nested scripts, PowerShell files, and interpreted code in other languages remain unsupported.
+
+
+### Added high-impact operations
+
+The command classifier also escalates irreversible or disruptive operations
+in Git (force pushes), Docker (volume removal), Kubernetes (bulk deletion and
+namespace removal), Helm (release removal), AWS S3 (recursive deletion and bucket
+removal), Terraform (unattended apply), and Google Cloud (project deletion).
+
+Dry-run and help-only forms are explicitly excluded where recognized. These
+are static heuristics on command strings, not proof that commands will execute,
+and should be reviewed in their full repository context.

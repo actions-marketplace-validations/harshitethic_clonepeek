@@ -40,6 +40,16 @@ CASES: tuple[tuple[str, str, str], ...] = (
     ("windows-rmdir-recursive", "rmdir /s /q C:\\temp\\build", "high"),
     ("docker-prune-volumes", "docker system prune -a --volumes -f", "high"),
     ("terraform-destroy-auto", "terraform destroy --auto-approve", "high"),
+    ("git-force-push", 'git push origin main --force-with-lease', "high"),
+    ("docker-compose-down-volumes", 'docker compose down -v', "high"),
+    ("docker-volume-prune", 'docker volume prune -f', "high"),
+    ("kubectl-delete-all", 'kubectl delete pods --all --force', "high"),
+    ("kubectl-delete-namespace", 'kubectl delete namespace production', "high"),
+    ("helm-uninstall", 'helm uninstall payments', "high"),
+    ("aws-s3-rm-recursive", 'aws s3 rm s3://example-bucket/backups --recursive', "high"),
+    ("aws-s3-bucket-delete", 'aws s3 rb s3://example-bucket --force', "high"),
+    ("terraform-apply-auto", 'terraform apply -auto-approve', "high"),
+    ("gcloud-project-delete", 'gcloud projects delete production-prod-1', "high"),
 )
 
 
@@ -85,6 +95,16 @@ class ExtendedRiskRegressionTests(unittest.TestCase):
             ("docker system prune --filter label=keep", "low"),
             ("terraform plan", "low"),
             ("curl -fsSL https://example.invalid/artifact -o artifact", "medium"),
+            ('git push origin main --dry-run --force', 'low'),
+            ('docker compose down', 'low'),
+            ('docker volume prune --help', 'low'),
+            ('kubectl delete pods --all --dry-run=client', 'low'),
+            ('kubectl delete namespace production --dry-run=client', 'low'),
+            ('helm uninstall --help', 'low'),
+            ('aws s3 rm s3://example-bucket/backups --recursive --dryrun', 'low'),
+            ('aws s3 rb --help', 'low'),
+            ('terraform plan', 'low'),
+            ('gcloud projects describe production-prod-1', 'low'),
         )
         for command, expected in safe_commands:
             with self.subTest(command=command):

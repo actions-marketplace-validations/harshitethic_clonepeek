@@ -102,6 +102,36 @@ HIGH_SIGNATURES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("terraform-destroy-auto", re.compile(
         r"""(?is)\bterraform\s+destroy\b.{0,120}--auto-approve\b"""
     )),
+    ("git-force-push", re.compile(
+        r"""(?is)\bgit\s+push\b(?![^\n;&|]{0,200}--dry-run\b)[^\n;&|]{0,200}\s--force(?:-with-lease)?\b"""
+    )),
+    ("docker-compose-down-volumes", re.compile(
+        r"""(?is)\bdocker(?:\s+compose|-compose)\s+down\b[^\n;&|]{0,160}(?:\s+-v\b|\s+--volumes\b)"""
+    )),
+    ("docker-volume-prune", re.compile(
+        r"""(?is)\bdocker\s+volume\s+prune\b(?![^\n;&|]{0,160}--help\b)"""
+    )),
+    ("kubectl-delete-all", re.compile(
+        r"""(?is)\bkubectl\s+delete\b(?![^\n;&|]{0,200}--dry-run(?:=|\b))[^\n;&|]{0,200}\s--all\b"""
+    )),
+    ("kubectl-delete-namespace", re.compile(
+        r"""(?is)\bkubectl\s+delete\s+(?:namespace|ns)\s+(?!-)[\w.-]+\b(?![^\n;&|]{0,160}--dry-run(?:=|\b))"""
+    )),
+    ("helm-uninstall", re.compile(
+        r"""(?is)\bhelm\s+uninstall\s+(?!--help\b)[\w.-]+\b(?![^\n;&|]{0,160}--dry-run(?:=|\b))"""
+    )),
+    ("aws-s3-rm-recursive", re.compile(
+        r"""(?is)\baws\s+s3\s+rm\s+s3://[^\s;&|]+(?![^\n;&|]{0,180}--dryrun\b)[^\n;&|]{0,180}\s--recursive\b"""
+    )),
+    ("aws-s3-bucket-delete", re.compile(
+        r"""(?is)\baws\s+s3\s+rb\s+s3://[^\s;&|]+\b(?![^\n;&|]{0,160}--dryrun\b)"""
+    )),
+    ("terraform-apply-auto", re.compile(
+        r"""(?is)\bterraform\s+apply\b[^\n;&|]{0,160}-{1,2}auto-approve\b"""
+    )),
+    ("gcloud-project-delete", re.compile(
+        r"""(?is)\bgcloud\s+projects\s+delete\s+(?!--help\b)[a-z][a-z0-9-]{3,}\b(?![^\n;&|]{0,160}--dry-run\b)"""
+    )),
 )
 
 
